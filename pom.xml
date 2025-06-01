@@ -3,7 +3,7 @@
   <parent>
     <groupId>com.litongjava</groupId>
     <artifactId>t-io</artifactId>
-    <version>3.7.3.v20240601-RELEASE</version>
+    <version>3.7.3.v20250601-RELEASE</version>
   </parent>
   <artifactId>tio-core</artifactId>
   <version>3.7.3.v20250601-RELEASE</version>
@@ -93,12 +93,13 @@
     <url>git@github.com:litongjava/tio-core.git</url>
   </scm>
 
-    <build>
+  <build>
     <plugins>
       <!-- Source -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
+        <version>2.2.1</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -112,6 +113,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.9.1</version>
         <configuration>
           <additionalparam>-Xdoclint:none</additionalparam>
         </configuration>

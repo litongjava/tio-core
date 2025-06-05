@@ -30,9 +30,10 @@ public class HandlePacketTask {
    * @return
    *
    * @author tanyaowu
+   * @throws Throwable 
    */
   @SuppressWarnings({ "unchecked", "rawtypes" })
-  public void handle(ChannelContext channelContext, Packet packet) {
+  public void handle(ChannelContext channelContext, Packet packet) throws Throwable {
     // int ret = 0;
     TioConfig tioConfig = channelContext.tioConfig;
     boolean keepConnection = packet.isKeepConnection();
@@ -71,8 +72,6 @@ public class HandlePacketTask {
         }
         tioConfig.getAioHandler().handler(packet, channelContext);
       }
-    } catch (Throwable e) {
-      e.printStackTrace();
     } finally {
       long end = SystemTimer.currTime;
       long iv = end - start;

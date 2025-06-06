@@ -80,7 +80,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, Virtual
       if (channelContext.sslFacadeContext == null) {
         // decode and run handler
         try {
-          decodeTask.decode(channelContext, byteBuffer); //原代码
+          decodeTask.decode(channelContext, byteBuffer);
         } catch (Throwable e) {
           log.error("Decode error", e);
           virtualBuffer.clean();

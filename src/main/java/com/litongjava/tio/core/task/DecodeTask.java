@@ -1,6 +1,7 @@
 package com.litongjava.tio.core.task;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import com.litongjava.aio.Packet;
@@ -10,9 +11,11 @@ import com.litongjava.tio.core.ChannelContext.CloseCode;
 import com.litongjava.tio.core.Tio;
 import com.litongjava.tio.core.TioConfig;
 import com.litongjava.tio.core.exception.AioDecodeException;
+import com.litongjava.tio.core.exception.TioDecodeException;
 import com.litongjava.tio.core.stat.ChannelStat;
 import com.litongjava.tio.core.stat.IpStat;
 import com.litongjava.tio.core.utils.ByteBufferUtils;
+import com.litongjava.tio.exception.TioHandlePacketException;
 import com.litongjava.tio.utils.SystemTimer;
 import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.hutool.CollUtil;
@@ -144,7 +147,14 @@ public class DecodeTask {
             log.debug("{}, Unpacking to get a packet:{}", channelContext, packet.logstr());
           }
 
-          new HandlePacketTask().handle(channelContext, packet);
+          try {
+            new HandlePacketTask().handle(channelContext, packet);
+          } catch (TioHandlePacketException e) {
+            byteBuffer.mark();
+            String request = StandardCharsets.UTF_8.decode(byteBuffer).toString();
+            byteBuffer.reset();
+            log.error("Failed to handle request:{},packet:{},byteBuffer:{}", request, packet, byteBuffer, e);
+          }
 
           if (byteBuffer.hasRemaining()) {
             // 组包后，还剩有数据
@@ -168,7 +178,7 @@ public class DecodeTask {
 
         channelContext.setPacketNeededLength(null);
 
-        if (e instanceof AioDecodeException) {
+        if (e instanceof AioDecodeException || e instanceof TioDecodeException) {
           List<Long> list = tioConfig.ipStats.durationList;
           if (list != null && list.size() > 0) {
             try {

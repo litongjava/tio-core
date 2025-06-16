@@ -1,10 +1,18 @@
 package com.litongjava.tio.core.task;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.FileChannel;
+import java.nio.channels.SocketChannel;
+import java.nio.file.StandardOpenOption;
+import java.util.concurrent.locks.LockSupport;
 
 import javax.net.ssl.SSLException;
 
 import com.litongjava.aio.Packet;
+import com.litongjava.enhance.channel.EnhanceAsynchronousServerChannel;
 import com.litongjava.tio.constants.TioCoreConfigKeys;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.ChannelContext.CloseCode;
@@ -82,13 +90,79 @@ public class SendPacketTask {
             }
           }
         }
-        sendByteBuffer(byteBuffer, nextPacket);
+
+        // … 上面已经调用 sendByteBuffer(headerBuf, nextPacket) 发送了 header …
+
+        AsynchronousSocketChannel asc = channelContext.asynchronousSocketChannel;
+        File fileBody = packet.getFileBody();
+        if (fileBody != null && asc instanceof EnhanceAsynchronousServerChannel) {
+          boolean keepConnection = nextPacket.isKeepConnection();
+          //send header
+          nextPacket.setKeepConnection(true);
+          sendByteBuffer(byteBuffer, nextPacket);
+          
+          transfer(fileBody, nextPacket, asc);
+          
+          if (!keepConnection) {
+            Tio.close(channelContext, "Send file finish");
+          }
+        } else {
+          sendByteBuffer(byteBuffer, nextPacket);
+        }
       } else {
         channelContext.isSending.set(false);
       }
     }
 
     return true;
+  }
+
+  private void transfer(File fileBody, Packet nextPacket, AsynchronousSocketChannel asc) {
+    SocketChannel sc = ((EnhanceAsynchronousServerChannel) asc).getSocketChannel();
+    if (!isSsl) {
+      // —— 零拷贝 —— 
+      try (FileChannel fc = FileChannel.open(fileBody.toPath(), StandardOpenOption.READ)) {
+        long pos = 0, size = fc.size();
+        while (pos < size) {
+          long sent = fc.transferTo(pos, size - pos, sc);
+          if (sent > 0) {
+            pos += sent;
+          } else {
+            LockSupport.parkNanos(1_000);  // 暂停 1µs
+            continue;
+          }
+        }
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+
+    } else {
+      // —— SSL 模式，分块读 + 加密 + 写出 —— 
+      try (FileChannel fc = FileChannel.open(fileBody.toPath(), StandardOpenOption.READ)) {
+        ByteBuffer buf = ByteBuffer.allocate(64 * 1024);
+        int readBytes;
+        while ((readBytes = fc.read(buf)) != -1) {
+          if (readBytes == 0)
+            continue;
+          buf.flip();
+
+          // 用同一个 packet 做附件，让 WriteCompletionHandler 能感知
+          SslVo sslVo = new SslVo(buf, nextPacket);
+          try {
+            channelContext.sslFacadeContext.getSslFacade().encrypt(sslVo);
+          } catch (SSLException e) {
+            log.error("Failed to encrypt data using ssl", e);
+            Tio.close(channelContext, "Failed to encrypt data using ssl", CloseCode.SSL_ENCRYPTION_ERROR);
+          }
+          ByteBuffer encrypted = sslVo.getByteBuffer();
+          // 同步写出加密后的数据块
+          sc.write(encrypted);
+          buf.clear();
+        }
+      } catch (IOException e1) {
+        e1.printStackTrace();
+      }
+    }
   }
 
   /**

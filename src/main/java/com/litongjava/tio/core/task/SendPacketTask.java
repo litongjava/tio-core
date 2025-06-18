@@ -91,8 +91,6 @@ public class SendPacketTask {
           }
         }
 
-        // … 上面已经调用 sendByteBuffer(headerBuf, nextPacket) 发送了 header …
-
         AsynchronousSocketChannel asc = channelContext.asynchronousSocketChannel;
         File fileBody = packet.getFileBody();
         if (fileBody != null && asc instanceof EnhanceAsynchronousServerChannel) {

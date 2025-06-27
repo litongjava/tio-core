@@ -5,7 +5,7 @@ import java.util.List;
 
 import com.litongjava.aio.Packet;
 import com.litongjava.aio.PacketMeta;
-import com.litongjava.tio.constants.TioCoreConfigKeys;
+import com.litongjava.tio.consts.TioCoreConfigKeys;
 import com.litongjava.tio.core.ChannelContext.CloseCode;
 import com.litongjava.tio.core.stat.IpStat;
 import com.litongjava.tio.core.task.SendPacketTask;

@@ -1,4 +1,4 @@
-package com.litongjava.tio.constants;
+package com.litongjava.tio.consts;
 
 public interface TioCoreConfigKeys {
   String TIO_CORE_DIAGNOSTIC = "tio.core.diagnostic";

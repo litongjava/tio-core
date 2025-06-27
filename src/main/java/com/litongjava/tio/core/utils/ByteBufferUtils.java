@@ -4,9 +4,6 @@ import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.litongjava.tio.core.exception.LengthOverflowException;
 import com.litongjava.tio.utils.hutool.StrUtil;
 
@@ -16,15 +13,10 @@ import com.litongjava.tio.utils.hutool.StrUtil;
  * 2017年10月19日 上午9:41:00
  */
 public class ByteBufferUtils {
-  @SuppressWarnings("unused")
-  private static Logger log = LoggerFactory.getLogger(ByteBufferUtils.class);
-
   /**
    * 组合两个bytebuffer，把可读部分的组合成一个新的bytebuffer
    * @param byteBuffer1
    * @param byteBuffer2
-   * @return
-   * @author: tanyaowu
    */
   public static ByteBuffer composite(ByteBuffer byteBuffer1, ByteBuffer byteBuffer2) {
     int capacity = byteBuffer1.remaining() + byteBuffer2.remaining();
@@ -262,8 +254,7 @@ public class ByteBufferUtils {
    * @throws LengthOverflowException
    * @author tanyaowu
    */
-  public static String readString(ByteBuffer buffer, String charset, char endChar, Integer maxlength)
-      throws LengthOverflowException {
+  public static String readString(ByteBuffer buffer, String charset, char endChar, Integer maxlength) throws LengthOverflowException {
     // boolean canEnd = false;
     int startPosition = buffer.position();
     int endPosition = indexOf(buffer, endChar, maxlength);

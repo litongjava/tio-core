@@ -9,7 +9,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.litongjava.aio.AioId;
 import com.litongjava.aio.Packet;
 import com.litongjava.tio.client.ClientTioConfig;
-import com.litongjava.tio.constants.TioCoreConfigKeys;
+import com.litongjava.tio.consts.TioConst;
+import com.litongjava.tio.consts.TioCoreConfigKeys;
 import com.litongjava.tio.core.cache.IpStatMapCacheRemovalListener;
 import com.litongjava.tio.core.intf.AioHandler;
 import com.litongjava.tio.core.intf.AioListener;
@@ -68,7 +69,11 @@ public abstract class TioConfig extends MapWithLockPropSupport {
   public boolean debug = false;
   public GroupStat groupStat = null;
   public boolean statOn = true;
+  public boolean checkAttacks = true;
+  public boolean ignoreDecodeFail = false;
   public PacketConverter packetConverter = null;
+  
+  private String charset = TioConst.CHARSET_NAME;
 
   /**
    * 缓存工厂
@@ -93,7 +98,7 @@ public abstract class TioConfig extends MapWithLockPropSupport {
    * 解码出现异常时，是否打印异常日志
    */
   public boolean logWhenDecodeError = false;
-  
+
   /**
    * 接收数据的buffer size
    */
@@ -264,6 +269,7 @@ public abstract class TioConfig extends MapWithLockPropSupport {
   public GroupStat getGroupStat() {
     return groupStat;
   }
+
   /**
    * 是服务器端还是客户端
    * 
@@ -294,6 +300,21 @@ public abstract class TioConfig extends MapWithLockPropSupport {
 
   public RemovalListenerWrapper<?> getIpRemovalListenerWrapper() {
     return ipRemovalListenerWrapper;
+  }
+  
+
+  /**
+   * @return the charset
+   */
+  public String getCharset() {
+    return charset;
+  }
+  
+  /**
+   * @param charset the charset to set
+   */
+  public void setCharset(String charset) {
+    this.charset = charset;
   }
 
   @SuppressWarnings({ "rawtypes", "unchecked" })

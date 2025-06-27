@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import com.litongjava.aio.Packet;
-import com.litongjava.tio.constants.TioCoreConfigKeys;
+import com.litongjava.tio.consts.TioCoreConfigKeys;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.ChannelContext.CloseCode;
 import com.litongjava.tio.core.Tio;
@@ -83,31 +83,26 @@ public class DecodeTask {
           lastByteBuffer = ByteBufferUtils.copy(byteBuffer, initPosition, limit);
           ChannelStat channelStat = channelContext.stat;
           channelStat.decodeFailCount++;
-          if (log.isInfoEnabled()) {
-            if (channelStat.decodeFailCount > 3) {
-              log.info("{} Failed to decode this time, has failed to decode for {} consecutive times, the length of data involved in decoding is {} bytes.", channelContext,
-                  channelStat.decodeFailCount, readableLength);
-            }
-          }
-          if (channelStat.decodeFailCount > 5) {
-            if (channelContext.packetNeededLength == null) {
-              if (log.isInfoEnabled()) {
-                log.info("{} Failed to decode this time, has failed to decode for {} consecutive times, the length of data involved in decoding is {} bytes.", channelContext,
-                    channelStat.decodeFailCount, readableLength);
-              }
-            }
-
-            // 检查慢包攻击
+          // 检查慢包攻击
+          if (channelContext.getTioConfig().checkAttacks) {
             if (channelStat.decodeFailCount > 10) {
               // int capacity = lastByteBuffer.capacity();
               int per = readableLength / channelStat.decodeFailCount;
               if (per < Math.min(channelContext.getReadBufferSize() / 2, 256)) {
                 String str = "Failed to decode continuously " + channelStat.decodeFailCount + " times unsuccessfully, and the average data received each time is " + per
                     + " bytes, which suggests the possibility of a slow attack";
+                log.warn(str);
                 throw new AioDecodeException(str);
               }
             }
           }
+
+          if (log.isInfoEnabled() && !channelContext.getTioConfig().ignoreDecodeFail) {
+            if (channelStat.decodeFailCount > 3 && channelContext.packetNeededLength == null) {
+              log.info("{} Failed to decode for {} consecutive times, the length of data involved in decoding is {} bytes.", channelContext, channelStat.decodeFailCount, readableLength);
+            }
+          }
+
           return;
         } else {
           // 解码成功

@@ -14,7 +14,7 @@ import com.litongjava.model.page.Page;
 import com.litongjava.tio.client.ClientChannelContext;
 import com.litongjava.tio.client.ClientTioConfig;
 import com.litongjava.tio.client.ReconnConf;
-import com.litongjava.tio.constants.TioCoreConfigKeys;
+import com.litongjava.tio.consts.TioCoreConfigKeys;
 import com.litongjava.tio.core.ChannelContext.CloseCode;
 import com.litongjava.tio.core.task.CloseTask;
 import com.litongjava.tio.core.task.SendPacketTask;

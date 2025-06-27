@@ -13,7 +13,7 @@ import javax.net.ssl.SSLException;
 
 import com.litongjava.aio.Packet;
 import com.litongjava.enhance.channel.EnhanceAsynchronousServerChannel;
-import com.litongjava.tio.constants.TioCoreConfigKeys;
+import com.litongjava.tio.consts.TioCoreConfigKeys;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.ChannelContext.CloseCode;
 import com.litongjava.tio.core.Tio;

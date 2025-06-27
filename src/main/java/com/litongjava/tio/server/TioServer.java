@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.litongjava.enhance.channel.EnhanceAsynchronousChannelProvider;
 import com.litongjava.enhance.channel.EnhanceAsynchronousServerSocketChannel;
-import com.litongjava.tio.constants.TioCoreConfigKeys;
+import com.litongjava.tio.consts.TioCoreConfigKeys;
 import com.litongjava.tio.core.Node;
 import com.litongjava.tio.utils.Threads;
 import com.litongjava.tio.utils.environment.EnvUtils;

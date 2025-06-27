@@ -4,7 +4,7 @@ import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.litongjava.aio.Packet;
-import com.litongjava.tio.constants.TioCoreConfigKeys;
+import com.litongjava.tio.consts.TioCoreConfigKeys;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.Node;
 import com.litongjava.tio.core.TioConfig;

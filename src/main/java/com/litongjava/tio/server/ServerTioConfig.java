@@ -6,7 +6,7 @@ import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 
 import com.litongjava.model.sys.SysConst;
-import com.litongjava.tio.constants.TioCoreConfigKeys;
+import com.litongjava.tio.consts.TioCoreConfigKeys;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.ChannelContext.CloseCode;
 import com.litongjava.tio.core.Tio;

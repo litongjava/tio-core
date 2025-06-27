@@ -9,7 +9,7 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 
 import com.litongjava.enhance.buffer.VirtualBuffer;
-import com.litongjava.tio.constants.TioCoreConfigKeys;
+import com.litongjava.tio.consts.TioCoreConfigKeys;
 import com.litongjava.tio.core.ReadCompletionHandler;
 import com.litongjava.tio.core.pool.BufferPageUtils;
 import com.litongjava.tio.core.ssl.SslUtils;

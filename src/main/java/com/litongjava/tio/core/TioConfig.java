@@ -72,8 +72,10 @@ public abstract class TioConfig extends MapWithLockPropSupport {
   public boolean checkAttacks = true;
   public boolean ignoreDecodeFail = false;
   public PacketConverter packetConverter = null;
-  
+
   private String charset = TioConst.CHARSET_NAME;
+  
+  private int workerThreads = EnvUtils.getInt(TioCoreConfigKeys.TIO_CORE_THREADS, Runtime.getRuntime().availableProcessors() * 4);
 
   /**
    * 缓存工厂
@@ -301,7 +303,6 @@ public abstract class TioConfig extends MapWithLockPropSupport {
   public RemovalListenerWrapper<?> getIpRemovalListenerWrapper() {
     return ipRemovalListenerWrapper;
   }
-  
 
   /**
    * @return the charset
@@ -309,12 +310,20 @@ public abstract class TioConfig extends MapWithLockPropSupport {
   public String getCharset() {
     return charset;
   }
-  
+
   /**
    * @param charset the charset to set
    */
   public void setCharset(String charset) {
     this.charset = charset;
+  }
+  
+  public int getWorkerThreads() {
+    return workerThreads;
+  }
+
+  public void setWorkerThreads(int workerThreads) {
+    this.workerThreads = workerThreads;
   }
 
   @SuppressWarnings({ "rawtypes", "unchecked" })

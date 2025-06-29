@@ -91,9 +91,11 @@ public class TioServer {
     } else {
       //serverSocketChannel = AsynchronousServerSocketChannel.open();
       EnhanceAsynchronousChannelProvider provider = new EnhanceAsynchronousChannelProvider(false);
-      int threads = EnvUtils.getInt(TioCoreConfigKeys.TIO_CORE_THREADS,Runtime.getRuntime().availableProcessors() * 4);
+      int workerThreads = serverTioConfig.getWorkerThreads();
+      log.info("workerThreads:{}", workerThreads);
       AtomicInteger threadNumber = new AtomicInteger(1);
-      AsynchronousChannelGroup group = provider.openAsynchronousChannelGroup(threads, new ThreadFactory() {
+
+      AsynchronousChannelGroup group = provider.openAsynchronousChannelGroup(workerThreads, new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
           return new Thread(r, "t-io-" + threadNumber.getAndIncrement());

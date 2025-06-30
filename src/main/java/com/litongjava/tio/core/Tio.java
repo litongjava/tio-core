@@ -61,7 +61,7 @@ public class Tio {
    * @param group
    */
   public static void bindGroup(TioConfig tioConfig, String userid, String group) {
-    SetWithLock<ChannelContext> setWithLock = Tio.getByUserid(tioConfig, userid);
+    SetWithLock<ChannelContext> setWithLock = Tio.getByUserId(tioConfig, userid);
     if (setWithLock != null) {
       setWithLock.handle(new ReadLockHandler<Set<ChannelContext>>() {
         @Override
@@ -87,19 +87,16 @@ public class Tio {
   /**
    * 绑定用户
    * @param channelContext
-   * @param userid
-   * @author tanyaowu
+   * @param userIdStr
    */
-  public static void bindUser(ChannelContext channelContext, String userid) {
-    channelContext.tioConfig.users.bind(userid, channelContext);
+  public static void bindUserId(ChannelContext channelContext, String userId) {
+    channelContext.tioConfig.users.bind(userId, channelContext);
   }
 
   /**
    * 阻塞发送消息到指定ChannelContext
    * @param channelContext
    * @param packet
-   * @return
-   * @author tanyaowu
    */
   public static boolean bSend(ChannelContext channelContext, Packet packet) {
     if (channelContext == null) {
@@ -440,7 +437,7 @@ public class Tio {
    * @param closeCode
    */
   public static void closeUser(TioConfig tioConfig, String userid, String remark, CloseCode closeCode) {
-    SetWithLock<ChannelContext> setWithLock = Tio.getByUserid(tioConfig, userid);
+    SetWithLock<ChannelContext> setWithLock = Tio.getByUserId(tioConfig, userid);
     closeSet(tioConfig, setWithLock, remark, closeCode);
   }
 
@@ -532,7 +529,7 @@ public class Tio {
    * @param removeCode
    */
   public static void removeUser(TioConfig tioConfig, String userid, String remark, CloseCode removeCode) {
-    SetWithLock<ChannelContext> setWithLock = Tio.getByUserid(tioConfig, userid);
+    SetWithLock<ChannelContext> setWithLock = Tio.getByUserId(tioConfig, userid);
     removeSet(tioConfig, setWithLock, remark, removeCode);
   }
 
@@ -774,12 +771,12 @@ public class Tio {
   /**
    * 根据userid获取SetWithLock<ChannelContext>
    * @param tioConfig
-   * @param userid
+   * @param userId
    * @return
    * @author tanyaowu
    */
-  public static SetWithLock<ChannelContext> getByUserid(TioConfig tioConfig, String userid) {
-    return tioConfig.users.find(tioConfig, userid);
+  public static SetWithLock<ChannelContext> getByUserId(TioConfig tioConfig, String userId) {
+    return tioConfig.users.find(tioConfig, userId);
   }
 
   /**
@@ -787,11 +784,9 @@ public class Tio {
    * @param tioConfig
    * @param userid
    * @return
-   * @author tanyaowu
-   * @deprecated 用getByUserid(tioConfig, userid)
    */
-  public static SetWithLock<ChannelContext> getChannelContextsByUserid(TioConfig tioConfig, String userid) {
-    return getByUserid(tioConfig, userid);
+  public static SetWithLock<ChannelContext> getChannelContextsByUserId(TioConfig tioConfig, String userid) {
+    return getByUserId(tioConfig, userid);
   }
 
   /**
@@ -800,7 +795,6 @@ public class Tio {
    * @param pageIndex
    * @param pageSize
    * @return
-   * @author tanyaowu
    */
   public static Page<ChannelContext> getPageOfAll(TioConfig tioConfig, Integer pageIndex, Integer pageSize) {
     return getPageOfAll(tioConfig, pageIndex, pageSize, null);
@@ -825,7 +819,6 @@ public class Tio {
    * @param pageIndex
    * @param pageSize
    * @return
-   * @author tanyaowu
    */
   public static Page<ChannelContext> getPageOfConnecteds(ClientTioConfig clientTioConfig, Integer pageIndex, Integer pageSize) {
     return getPageOfConnecteds(clientTioConfig, pageIndex, pageSize, null);
@@ -1021,7 +1014,8 @@ public class Tio {
   public static boolean send(ChannelContext channelContext, Packet packet) {
     return send(channelContext, packet, null, null);
   }
-
+  
+  
   /**
    *
    * @param channelContext
@@ -1564,7 +1558,7 @@ public class Tio {
    * @param group
    */
   public static void unbindGroup(TioConfig tioConfig, String userid, String group) {
-    SetWithLock<ChannelContext> setWithLock = Tio.getByUserid(tioConfig, userid);
+    SetWithLock<ChannelContext> setWithLock = Tio.getByUserId(tioConfig, userid);
     if (setWithLock != null) {
       setWithLock.handle(new ReadLockHandler<Set<ChannelContext>>() {
         @Override

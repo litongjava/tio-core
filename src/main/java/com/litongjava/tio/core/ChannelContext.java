@@ -52,7 +52,7 @@ public abstract class ChannelContext extends MapWithLockPropSupport {
   public final ReentrantReadWriteLock closeLock = new ReentrantReadWriteLock();
 
   public SslFacadeContext sslFacadeContext;
-  public String userid;
+  public String userId;
   private String token;
   private String bsId;
   public boolean isWaitingClose = false;
@@ -443,10 +443,10 @@ public abstract class ChannelContext extends MapWithLockPropSupport {
   }
 
   /**
-   * @param userid the userid to set 给框架内部用的，用户请勿调用此方法
+   * @param userId the userid to set 给框架内部用的，用户请勿调用此方法
    */
-  public void setUserid(String userid) {
-    this.userid = userid;
+  public void setUserId(String userId) {
+    this.userId = userId;
   }
 
   @Override

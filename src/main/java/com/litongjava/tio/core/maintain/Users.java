@@ -1,6 +1,5 @@
 package com.litongjava.tio.core.maintain;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -28,51 +27,38 @@ public class Users {
    * key: userid
    * value: ChannelContext
    */
-  private MapWithLock<String, SetWithLock<ChannelContext>> mapWithLock = new MapWithLock<>(
-      new HashMap<String, SetWithLock<ChannelContext>>());
+  private MapWithLock<String, SetWithLock<ChannelContext>> mapStrWithLock = new MapWithLock<>();
 
   /**
    * 绑定userid.
    *
-   * @param userid the userid
+   * @param userId the userid
    * @param channelContext the channel context
-   * @author tanyaowu
    */
-  public void bind(String userid, ChannelContext channelContext) {
+  public void bind(String userId, ChannelContext channelContext) {
     if (channelContext.tioConfig.isShortConnection) {
       return;
     }
 
-    if (StrUtil.isBlank(userid)) {
+    if (StrUtil.isBlank(userId)) {
       return;
     }
 
     try {
-      SetWithLock<ChannelContext> setWithLock = mapWithLock.get(userid);
+      SetWithLock<ChannelContext> setWithLock = mapStrWithLock.get(userId);
       if (setWithLock == null) {
-        LockUtils.runWriteOrWaitRead("_tio_users_bind__" + userid, this, () -> {
-//					@Override
-//					public void read() {
-//					}
-
-//					@Override
-//					public void write() {
-//						SetWithLock<ChannelContext> setWithLock = mapWithLock.get(userid);
-          if (mapWithLock.get(userid) == null) {
-//							setWithLock = new SetWithLock<>(new HashSet<ChannelContext>());
-            mapWithLock.put(userid, new SetWithLock<>(new HashSet<ChannelContext>()));
+        LockUtils.runWriteOrWaitRead("_tio_users_bind__" + userId, this, () -> {
+          if (mapStrWithLock.get(userId) == null) {
+            mapStrWithLock.put(userId, new SetWithLock<>(new HashSet<ChannelContext>()));
           }
-//					}
         });
-        setWithLock = mapWithLock.get(userid);
+        setWithLock = mapStrWithLock.get(userId);
       }
       setWithLock.add(channelContext);
-
-      channelContext.setUserid(userid);
+      channelContext.setUserId(userId);
     } catch (Throwable e) {
-      log.error("", e);
+      e.printStackTrace();
     }
-
   }
 
   /**
@@ -90,14 +76,15 @@ public class Users {
       return null;
     }
 
-    return mapWithLock.get(userid);
+    return mapStrWithLock.get(userid);
   }
+
 
   /**
    * @return the mapWithLock
    */
   public MapWithLock<String, SetWithLock<ChannelContext>> getMap() {
-    return mapWithLock;
+    return mapStrWithLock;
   }
 
   /**
@@ -110,27 +97,26 @@ public class Users {
       return;
     }
 
-    String userid = channelContext.userid;
+    String userid = channelContext.userId;
     if (StrUtil.isBlank(userid)) {
       log.debug("{}, {}, unbind user", channelContext.tioConfig.getName(), channelContext.toString());
       return;
     }
 
     try {
-      SetWithLock<ChannelContext> setWithLock = mapWithLock.get(userid);
+      SetWithLock<ChannelContext> setWithLock = mapStrWithLock.get(userid);
       if (setWithLock == null) {
-        log.warn("{}, {}, userid:{}, can't find SetWithLock", channelContext.tioConfig.getName(), channelContext.toString(),
-            userid);
+        log.warn("{}, {}, userid:{}, can't find SetWithLock", channelContext.tioConfig.getName(), channelContext.toString(), userid);
         return;
       }
 
       setWithLock.remove(channelContext);
 
       if (setWithLock.size() == 0) {
-        mapWithLock.remove(userid);
+        mapStrWithLock.remove(userid);
       }
 
-      channelContext.setUserid(null);
+      channelContext.setUserId(null);
     } catch (Throwable e) {
       log.error(e.toString(), e);
     }
@@ -151,10 +137,10 @@ public class Users {
     }
 
     try {
-      Lock lock = mapWithLock.writeLock();
+      Lock lock = mapStrWithLock.writeLock();
       lock.lock();
       try {
-        Map<String, SetWithLock<ChannelContext>> m = mapWithLock.getObj();
+        Map<String, SetWithLock<ChannelContext>> m = mapStrWithLock.getObj();
         SetWithLock<ChannelContext> setWithLock = m.get(userid);
         if (setWithLock == null) {
           return;
@@ -166,7 +152,7 @@ public class Users {
           Set<ChannelContext> set = setWithLock.getObj();
           if (set.size() > 0) {
             for (ChannelContext channelContext : set) {
-              channelContext.setUserid(null);
+              channelContext.setUserId(null);
             }
             set.clear();
           }

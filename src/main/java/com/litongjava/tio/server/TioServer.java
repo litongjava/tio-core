@@ -92,7 +92,7 @@ public class TioServer {
       //serverSocketChannel = AsynchronousServerSocketChannel.open();
       EnhanceAsynchronousChannelProvider provider = new EnhanceAsynchronousChannelProvider(false);
       int workerThreads = serverTioConfig.getWorkerThreads();
-      log.info("workerThreads:{}", workerThreads);
+      log.info("{} workerThreads:{}", serverTioConfig.getName(), workerThreads);
       AtomicInteger threadNumber = new AtomicInteger(1);
 
       AsynchronousChannelGroup group = provider.openAsynchronousChannelGroup(workerThreads, new ThreadFactory() {

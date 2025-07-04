@@ -69,12 +69,14 @@ public abstract class TioConfig extends MapWithLockPropSupport {
   public boolean debug = false;
   public GroupStat groupStat = null;
   public boolean statOn = true;
+
   public boolean checkAttacks = true;
   public boolean ignoreDecodeFail = false;
+  public boolean runOnAndroid = false;
   public PacketConverter packetConverter = null;
 
   private String charset = TioConst.CHARSET_NAME;
-  
+
   private int workerThreads = EnvUtils.getInt(TioCoreConfigKeys.TIO_CORE_THREADS, Runtime.getRuntime().availableProcessors() * 4);
 
   /**
@@ -146,6 +148,12 @@ public abstract class TioConfig extends MapWithLockPropSupport {
 
   public TioConfig(String name) {
     this.name = name;
+    try {
+      // Android 上会有这个类
+      Class.forName("android.os.Build");
+      runOnAndroid = true;
+    } catch (ClassNotFoundException ignored) {
+    }
   }
 
   /**
@@ -317,7 +325,7 @@ public abstract class TioConfig extends MapWithLockPropSupport {
   public void setCharset(String charset) {
     this.charset = charset;
   }
-  
+
   public int getWorkerThreads() {
     return workerThreads;
   }

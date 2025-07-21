@@ -34,10 +34,8 @@ public class ClientTioConfig extends TioConfig {
 
   /**
    * 不重连
-   * 
    * @param aioHandler
    * @param aioListener
-   * @author tanyaowu
    */
   public ClientTioConfig(ClientAioHandler aioHandler, ClientAioListener aioListener) {
     this(aioHandler, aioListener, null);
@@ -55,6 +53,7 @@ public class ClientTioConfig extends TioConfig {
     this.setClientAioListener(aioListener);
 
     this.reconnConf = reconnConf;
+    this.init();
   }
 
   /**

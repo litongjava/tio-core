@@ -309,7 +309,7 @@ public class TioClient {
                 Packet packet = aioHandler.heartbeatPacket(channelContext);
                 if (packet != null) {
                   if (log.isInfoEnabled()) {
-                    log.info("{}发送心跳包", channelContext.toString());
+                    log.info("{} send heartbeat packet ", channelContext.toString());
                   }
                   Tio.send(channelContext, packet);
                 }
@@ -334,7 +334,7 @@ public class TioClient {
           }
         }
       }
-    }, "tio-timer-heartbeat" + id).start();
+    }, "tio-timer-heartbeat-" + id).start();
   }
 
   /**

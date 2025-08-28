@@ -32,7 +32,6 @@ public class AcceptCompletionHandler implements CompletionHandler<AsynchronousSo
    *
    * @param clientSocketChannel
    * @param tioServer
-   * @author tanyaowu
    */
   @Override
   public void completed(AsynchronousSocketChannel clientSocketChannel, TioServer tioServer) {
@@ -139,7 +138,6 @@ public class AcceptCompletionHandler implements CompletionHandler<AsynchronousSo
    *
    * @param exc
    * @param tioServer
-   * @author tanyaowu
    */
   @Override
   public void failed(Throwable exc, TioServer tioServer) {

@@ -33,7 +33,6 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, Virtual
   /**
    *
    * @param channelContext
-   * @author tanyaowu
    */
   public ReadCompletionHandler(ChannelContext channelContext) {
     this.channelContext = channelContext;

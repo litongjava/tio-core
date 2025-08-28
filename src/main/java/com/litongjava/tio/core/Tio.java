@@ -1009,22 +1009,11 @@ public class Tio {
    * 发送消息到指定ChannelContext
    * @param channelContext
    * @param packet
-   * @author tanyaowu
    */
   public static boolean send(ChannelContext channelContext, Packet packet) {
     return send(channelContext, packet, null, null);
   }
   
-  
-  /**
-   *
-   * @param channelContext
-   * @param packet
-   * @param countDownLatch
-   * @param packetSendMode
-   * @return
-   * @author tanyaowu
-   */
   private static boolean send(final ChannelContext channelContext, Packet packet, CountDownLatch countDownLatch,
       //
       PacketSendMode packetSendMode) {

@@ -12,6 +12,7 @@ import java.util.concurrent.locks.LockSupport;
 import javax.net.ssl.SSLException;
 
 import com.litongjava.aio.Packet;
+import com.litongjava.enhance.buffer.Buffers;
 import com.litongjava.enhance.channel.EnhanceAsynchronousServerChannel;
 import com.litongjava.tio.consts.TioCoreConfigKeys;
 import com.litongjava.tio.core.ChannelContext;
@@ -30,18 +31,23 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Send data to client
+ * 
  * @author Tong Li
  */
 @Slf4j
 public class SendPacketTask {
 
-  private final static boolean DIAGNOSTIC_LOG_ENABLED = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_DIAGNOSTIC, false);
+  private final static boolean DIAGNOSTIC_LOG_ENABLED = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_DIAGNOSTIC,
+      false);
 
   public boolean canSend = true;
   private ChannelContext channelContext = null;
   private TioConfig tioConfig = null;
   private AioHandler aioHandler = null;
   private boolean isSsl = false;
+
+//类内新增（开关：是否把 heap buffer 强制改为 direct）
+  private static final boolean FORCE_DIRECT = EnvUtils.getBoolean("tio.force_direct_out", true);
 
   public SendPacketTask(ChannelContext channelContext) {
     this.channelContext = channelContext;
@@ -50,16 +56,32 @@ public class SendPacketTask {
     this.isSsl = SslUtils.isSsl(tioConfig);
   }
 
+//类内工具：确保发出的 buffer 为 direct（如已是 direct 直接复用；否则池借并拷贝）
+  private ByteBuffer ensureDirect(ByteBuffer src) {
+    if (src.isDirect())
+      return src;
+    if (!FORCE_DIRECT)
+      return src; // 不强制时，保持 heap
+    // 拷贝到池借 direct
+    int remaining = src.remaining();
+    ByteBuffer direct = Buffers.DIRECT_POOL.borrow(remaining);
+    direct.clear();
+    direct.put(src.duplicate()); // 拷贝数据
+    direct.flip();
+    return direct;
+  }
+
   private ByteBuffer getByteBuffer(Packet packet) {
     ByteBuffer byteBuffer = packet.getPreEncodedByteBuffer();
     try {
       if (byteBuffer == null) {
         byteBuffer = aioHandler.encode(packet, tioConfig, channelContext);
       }
-
       if (!byteBuffer.hasRemaining()) {
         byteBuffer.flip();
       }
+      // ☆ 关键：确保用于写出的 buffer 为 direct
+      byteBuffer = ensureDirect(byteBuffer);
       return byteBuffer;
     } catch (Exception e) {
       throw new RuntimeException(e);
@@ -95,12 +117,12 @@ public class SendPacketTask {
         File fileBody = packet.getFileBody();
         if (fileBody != null && asc instanceof EnhanceAsynchronousServerChannel) {
           boolean keepConnection = nextPacket.isKeepConnection();
-          //send header
+          // send header
           nextPacket.setKeepConnection(true);
           sendByteBuffer(byteBuffer, nextPacket);
-          
+
           transfer(fileBody, nextPacket, asc);
-          
+
           if (!keepConnection) {
             Tio.close(channelContext, "Send file finish");
           }
@@ -118,7 +140,7 @@ public class SendPacketTask {
   private void transfer(File fileBody, Packet nextPacket, AsynchronousSocketChannel asc) {
     SocketChannel sc = ((EnhanceAsynchronousServerChannel) asc).getSocketChannel();
     if (!isSsl) {
-      // —— 零拷贝 —— 
+      // —— 零拷贝 ——（不需要 buffer 池）
       try (FileChannel fc = FileChannel.open(fileBody.toPath(), StandardOpenOption.READ)) {
         long pos = 0, size = fc.size();
         while (pos < size) {
@@ -126,36 +148,40 @@ public class SendPacketTask {
           if (sent > 0) {
             pos += sent;
           } else {
-            LockSupport.parkNanos(1_000);  // 暂停 1µs
-            continue;
+            LockSupport.parkNanos(1_000);
           }
         }
       } catch (IOException e) {
         e.printStackTrace();
       }
-
     } else {
-      // —— SSL 模式，分块读 + 加密 + 写出 —— 
+      // —— SSL：分块读 + 加密 + 写出 ——（改：分配→池借；用完归还）
       try (FileChannel fc = FileChannel.open(fileBody.toPath(), StandardOpenOption.READ)) {
-        ByteBuffer buf = ByteBuffer.allocate(64 * 1024);
-        int readBytes;
-        while ((readBytes = fc.read(buf)) != -1) {
-          if (readBytes == 0)
-            continue;
-          buf.flip();
+        ByteBuffer buf = Buffers.DIRECT_POOL.borrow(64 * 1024); // 池借
+        try {
+          int readBytes;
+          while ((readBytes = fc.read(buf)) != -1) {
+            if (readBytes == 0)
+              continue;
+            buf.flip();
 
-          // 用同一个 packet 做附件，让 WriteCompletionHandler 能感知
-          SslVo sslVo = new SslVo(buf, nextPacket);
-          try {
-            channelContext.sslFacadeContext.getSslFacade().encrypt(sslVo);
-          } catch (SSLException e) {
-            log.error("Failed to encrypt data using ssl", e);
-            Tio.close(channelContext, "Failed to encrypt data using ssl", CloseCode.SSL_ENCRYPTION_ERROR);
+            SslVo sslVo = new SslVo(buf, nextPacket);
+            try {
+              channelContext.sslFacadeContext.getSslFacade().encrypt(sslVo);
+            } catch (SSLException e) {
+              log.error("Failed to encrypt data using ssl", e);
+              Tio.close(channelContext, "Failed to encrypt data using ssl", CloseCode.SSL_ENCRYPTION_ERROR);
+              break;
+            }
+            ByteBuffer encrypted = sslVo.getByteBuffer();
+            // 同步写出
+            while (encrypted.hasRemaining()) {
+              sc.write(encrypted);
+            }
+            buf.clear();
           }
-          ByteBuffer encrypted = sslVo.getByteBuffer();
-          // 同步写出加密后的数据块
-          sc.write(encrypted);
-          buf.clear();
+        } finally {
+          Buffers.DIRECT_POOL.giveBack(buf); // 归还
         }
       } catch (IOException e1) {
         e1.printStackTrace();
@@ -164,22 +190,29 @@ public class SendPacketTask {
   }
 
   /**
-  *
-  * @param byteBuffer
-  * @param packets Packet or List<Packet>
-  * @author tanyaowu
-  */
+   *
+   * @param byteBuffer
+   * @param packets    Packet or List<Packet>
+   * @author tanyaowu
+   */
   private void sendByteBuffer(ByteBuffer byteBuffer, Object packets) {
     if (byteBuffer == null) {
       log.error("{},byteBuffer is null", channelContext);
       return;
     }
-
     if (!TioUtils.checkBeforeIO(channelContext)) {
       return;
     }
 
-    WriteCompletionVo writeCompletionVo = new WriteCompletionVo(byteBuffer, packets);
+    // ☆ 为 direct buffer 提供归还回调（写完由 WriteCompletionHandler 调）
+    Runnable returnToPool = null;
+    if (byteBuffer.isDirect()) {
+      final ByteBuffer toReturn = byteBuffer;
+      returnToPool = () -> Buffers.DIRECT_POOL.giveBack(toReturn);
+    }
+
+    // WriteCompletionVo：支持 returnToPool 参数
+    WriteCompletionVo writeCompletionVo = new WriteCompletionVo(byteBuffer, packets, false, returnToPool);
     WriteCompletionHandler writeCompletionHandler = new WriteCompletionHandler(this.channelContext);
     this.channelContext.asynchronousSocketChannel.write(byteBuffer, writeCompletionVo, writeCompletionHandler);
   }

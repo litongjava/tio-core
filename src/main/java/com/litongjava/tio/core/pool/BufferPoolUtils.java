@@ -1,22 +1,27 @@
 package com.litongjava.tio.core.pool;
 
+import java.lang.management.BufferPoolMXBean;
+import java.lang.management.ManagementFactory;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 
+import com.litongjava.enhance.buffer.BufferMemoryStat;
+import com.litongjava.enhance.buffer.BufferMomeryInfo;
 import com.litongjava.enhance.buffer.BufferPagePool;
 import com.litongjava.enhance.buffer.DirectBufferCleaner;
 import com.litongjava.enhance.buffer.VirtualBuffer;
 import com.litongjava.tio.utils.environment.EnvUtils;
 
 public class BufferPoolUtils {
-  /** 底层页池 */
-  public static BufferPagePool bufferPool = new BufferPagePool(1, true);
-
   /** 是否使用直接内存缓冲区（可通过环境变量开关） */
   public static final boolean direct = EnvUtils.getBoolean("tio.core.buffer.direct", true);
+
+  /** 底层页池 */
+  public static BufferPagePool bufferPool = new BufferPagePool(1, direct);
 
   /** “系统是否空闲”的标记，由分配与清理线程共享，需保障可见性 */
   private static volatile boolean idle = true;
@@ -55,12 +60,15 @@ public class BufferPoolUtils {
 
   /** 实际释放直接缓冲区（堆缓冲区无需显式清理） */
   private static void clean0(ByteBuffer buffer) {
-    if (buffer != null && buffer.isDirect()) {
-      try {
-        DirectBufferCleaner.clean(buffer);
-      } catch (Throwable e) {
-        // 释放失败不影响后续逻辑
-        e.printStackTrace();
+    if (buffer != null) {
+      statCleanCount.increment();
+      if (buffer.isDirect()) {
+        try {
+          DirectBufferCleaner.clean(buffer);
+        } catch (Throwable e) {
+          // 释放失败不影响后续逻辑
+          e.printStackTrace();
+        }
       }
     }
   }
@@ -119,8 +127,9 @@ public class BufferPoolUtils {
     return allocateResponse((int) need);
   }
 
-  public static final LongAdder statReuseHit = new LongAdder(); // 复用命中（容量+direct一致）
-  public static final LongAdder statNewAlloc = new LongAdder(); // 新分配次数
+  private static final LongAdder statReuseHit = new LongAdder(); // 复用命中（容量+direct一致）
+  private static final LongAdder statNewAlloc = new LongAdder(); // 新分配次数
+  private static final LongAdder statCleanCount = new LongAdder(); // 实际清理次数
 
   /*
    * ====================== ByteBuffer 分配/回收 ======================
@@ -179,5 +188,37 @@ public class BufferPoolUtils {
       return;
     }
     cleanBuffers.offer(cleanBuffer);
+  }
+
+  public static BufferMemoryStat getStat() {
+    BufferMemoryStat memoryStat = new BufferMemoryStat();
+    memoryStat.statNewAlloc = statNewAlloc.longValue();
+    memoryStat.statCleanCount = statCleanCount.longValue();
+    memoryStat.statReuseHit = statReuseHit.longValue();
+    memoryStat.bufferSize = cleanBuffers.size();
+    return memoryStat;
+  }
+
+  public static BufferMomeryInfo getBufferMomeryInfo() {
+    BufferMomeryInfo bufferMomeryInfo = new BufferMomeryInfo();
+    List<BufferPoolMXBean> pools = ManagementFactory.getPlatformMXBeans(BufferPoolMXBean.class);
+    for (BufferPoolMXBean p : pools) {
+      if ("direct".equalsIgnoreCase(p.getName())) {
+        long count = p.getCount();
+        long l = p.getMemoryUsed() / 1024 / 1024;
+        long m = p.getTotalCapacity() / 1024 / 1024;
+        bufferMomeryInfo.directCount = count;
+        bufferMomeryInfo.directMemoryUsed = l;
+        bufferMomeryInfo.totalCapacity = m;
+      }
+    }
+
+    BufferMemoryStat[] requestBufferMemoryStat = bufferPool.getRequestBufferMemoryStat();
+    BufferMemoryStat[] responseBufferMemoryStat = bufferPool.getResponseBufferMemoryStat();
+
+    bufferMomeryInfo.requestBufferMemoryStat = requestBufferMemoryStat;
+    bufferMomeryInfo.responseBufferMemoryStat = responseBufferMemoryStat;
+    bufferMomeryInfo.responseMemoryStat = getStat();
+    return bufferMomeryInfo;
   }
 }

@@ -5,7 +5,6 @@ import java.lang.management.ManagementFactory;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -13,12 +12,13 @@ import com.litongjava.enhance.buffer.BufferMemoryStat;
 import com.litongjava.enhance.buffer.BufferMomeryInfo;
 import com.litongjava.enhance.buffer.BufferPagePool;
 import com.litongjava.enhance.buffer.DirectBufferCleaner;
+import com.litongjava.enhance.buffer.GlobalScheduler;
 import com.litongjava.enhance.buffer.VirtualBuffer;
-import com.litongjava.tio.utils.environment.EnvUtils;
+import com.litongjava.tio.core.TioConfig;
 
 public class BufferPoolUtils {
   /** 是否使用直接内存缓冲区（可通过环境变量开关） */
-  public static final boolean direct = EnvUtils.getBoolean("tio.core.buffer.direct", true);
+  public static final boolean direct = TioConfig.direct;
 
   /** 底层页池 */
   public static BufferPagePool bufferPool = new BufferPagePool(1, direct);
@@ -29,16 +29,9 @@ public class BufferPoolUtils {
   /** 待复用/待清理的缓冲区队列（简单实现用一条队列） */
   private static final ConcurrentLinkedQueue<ByteBuffer> cleanBuffers = new ConcurrentLinkedQueue<>();
 
-  /** 定时清理线程池（守护线程） */
-  private static final ScheduledThreadPoolExecutor BUFFER_POOL_CLEAN = new ScheduledThreadPoolExecutor(1, r -> {
-    Thread thread = new Thread(r, "direct-byte-buffer-clean");
-    thread.setDaemon(true);
-    return thread;
-  });
-
   static {
     // 初始延迟 500ms，之后每 1000ms 执行一次
-    BUFFER_POOL_CLEAN.scheduleWithFixedDelay(BufferPoolUtils::tryClean, 500, 1000, TimeUnit.MILLISECONDS);
+    GlobalScheduler.scheduleWithFixedDelay(BufferPoolUtils::tryClean, 500, 1000, TimeUnit.MILLISECONDS);
   }
 
   /**

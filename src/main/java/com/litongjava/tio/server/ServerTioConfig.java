@@ -3,8 +3,12 @@ package com.litongjava.tio.server;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 
+import com.litongjava.enhance.buffer.BufferMemoryStat;
+import com.litongjava.enhance.buffer.BufferMomeryInfo;
+import com.litongjava.enhance.buffer.GlobalScheduler;
 import com.litongjava.model.sys.SysConst;
 import com.litongjava.tio.consts.TioCoreConfigKeys;
 import com.litongjava.tio.core.ChannelContext;
@@ -14,6 +18,7 @@ import com.litongjava.tio.core.TioConfig;
 import com.litongjava.tio.core.intf.AioHandler;
 import com.litongjava.tio.core.intf.AioListener;
 import com.litongjava.tio.core.maintain.GlobalIpBlacklist;
+import com.litongjava.tio.core.pool.BufferPoolUtils;
 import com.litongjava.tio.core.ssl.SslConfig;
 import com.litongjava.tio.server.intf.ServerAioHandler;
 import com.litongjava.tio.server.intf.ServerAioListener;
@@ -68,7 +73,8 @@ public class ServerTioConfig extends TioConfig {
    * @throws Exception
    * @author tanyaowu
    */
-  public void useSsl(InputStream keyStoreInputStream, InputStream trustStoreInputStream, String passwd) throws Exception {
+  public void useSsl(InputStream keyStoreInputStream, InputStream trustStoreInputStream, String passwd)
+      throws Exception {
     SslConfig sslConfig = SslConfig.forServer(keyStoreInputStream, trustStoreInputStream, passwd);
     this.setSslConfig(sslConfig);
   }
@@ -176,6 +182,11 @@ public class ServerTioConfig extends TioConfig {
     super.init();
     this.groupStat = new ServerGroupStat();
     GlobalIpBlacklist.INSTANCE.init(this);
+    startHeartbeatCheck();
+    GlobalScheduler.scheduleWithFixedDelay(this::printStats, 60, 60, TimeUnit.SECONDS);
+  }
+
+  private void startHeartbeatCheck() {
     Runnable check = new Runnable() {
       @Override
       public void run() {
@@ -196,20 +207,16 @@ public class ServerTioConfig extends TioConfig {
           } catch (InterruptedException e1) {
             log.error(e1.toString(), e1);
           }
-          long start = SystemTimer.currTime;
           SetWithLock<ChannelContext> setWithLock = connections;
           Set<ChannelContext> set = null;
-          long start1 = 0;
-          int count = 0;
           ReadLock readLock = setWithLock.readLock();
           readLock.lock();
           try {
-            start1 = SystemTimer.currTime;
             set = setWithLock.getObj();
 
             for (ChannelContext channelContext : set) {
-              count++;
-              long compareTime = Math.max(channelContext.stat.latestTimeOfReceivedByte, channelContext.stat.latestTimeOfSentPacket);
+              long compareTime = Math.max(channelContext.stat.latestTimeOfReceivedByte,
+                  channelContext.stat.latestTimeOfSentPacket);
               long currtime = SystemTimer.currTime;
               long interval = currtime - compareTime;
 
@@ -221,7 +228,8 @@ public class ServerTioConfig extends TioConfig {
               }
 
               if (needRemove) {
-                if (!ServerTioConfig.this.serverAioListener.onHeartbeatTimeout(channelContext, interval, channelContext.stat.heartbeatTimeoutCount.incrementAndGet())) {
+                if (!ServerTioConfig.this.serverAioListener.onHeartbeatTimeout(channelContext, interval,
+                    channelContext.stat.heartbeatTimeoutCount.incrementAndGet())) {
                   log.info("{}, {} ms or not send and receive message", channelContext, interval);
                   channelContext.setCloseCode(CloseCode.HEARTBEAT_TIMEOUT);
                   Tio.remove(channelContext, interval + " ms not send and receive message");
@@ -229,15 +237,12 @@ public class ServerTioConfig extends TioConfig {
               }
             }
           } catch (Throwable e) {
-            log.error("", e);
+            log.error(e.getMessage(), e);
           } finally {
             try {
               readLock.unlock();
-              if (debug) {
-                diagnostic(start, set, start1, count);
-              }
             } catch (Throwable e) {
-              log.error("", e);
+              log.error(e.getMessage(), e);
             }
           }
         }
@@ -250,25 +255,26 @@ public class ServerTioConfig extends TioConfig {
     checkHeartbeatThread.start();
   }
 
-  private void diagnostic(long start, Set<ChannelContext> set, long start1, int count) {
+  private void printStats() {
     StringBuilder builder = new StringBuilder();
     builder.append(SysConst.CRLF).append(name);
     builder.append("\r\n ├ 当前时间:").append(SystemTimer.currTime);
     builder.append("\r\n ├ 连接统计");
     builder.append("\r\n │ \t ├ 共接受过连接数 :").append(((ServerGroupStat) groupStat).accepted.get());
-    builder.append("\r\n │ \t ├ 当前连接数 :").append(set.size());
-    // builder.append("\r\n │ \t ├ 当前群组数 :").append(groups);
+    builder.append("\r\n │ \t ├ 当前连接数 :").append(this.connections.getObj().size());
     builder.append("\r\n │ \t ├ 异IP连接数 :").append(this.ips.getIpmap().getObj().size());
     builder.append("\r\n │ \t └ 关闭过的连接数 :").append(groupStat.closed.get());
 
     builder.append("\r\n ├ 消息统计");
     builder.append("\r\n │ \t ├ 已处理消息 :").append(groupStat.handledPackets.get());
-    builder.append("\r\n │ \t ├ 已接收消息(packet/byte) :").append(groupStat.receivedPackets.get()).append("/").append(groupStat.receivedBytes.get());
-    builder.append("\r\n │ \t ├ 已发送消息(packet/byte) :").append(groupStat.sentPackets.get()).append("/").append(groupStat.sentBytes.get()).append("b");
+    builder.append("\r\n │ \t ├ 已接收消息(packet/byte) :").append(groupStat.receivedPackets.get()).append("/")
+        .append(groupStat.receivedBytes.get());
+    builder.append("\r\n │ \t ├ 已发送消息(packet/byte) :").append(groupStat.sentPackets.get()).append("/")
+        .append(groupStat.sentBytes.get()).append("b");
     builder.append("\r\n │ \t ├ 平均每次TCP包接收的字节数 :").append(groupStat.getBytesPerTcpReceive());
     builder.append("\r\n │ \t └ 平均每次TCP包接收的业务包 :").append(groupStat.getPacketsPerTcpReceive());
-    builder.append("\r\n └ IP统计时段 ");
 
+    builder.append("\r\n └ IP统计时段 ");
     if (CollUtil.isNotEmpty(ipStats.durationList)) {
       builder.append("\r\n   \t └ ").append(AppendJsonConverter.convertListLongToJson(this.ipStats.durationList));
     } else {
@@ -286,14 +292,48 @@ public class ServerTioConfig extends TioConfig {
     builder.append("\r\n │ \t └ groupmap:").append(this.groups.getGroupmap().getObj().size());
     builder.append("\r\n └ 拉黑IP ");
     if (this.ipBlacklist != null) {
-      builder.append("\r\n   \t └ ").append(AppendJsonConverter.convertCollectionStringToJson(this.ipBlacklist.getAll()));
+      builder.append("\r\n   \t └ ")
+          .append(AppendJsonConverter.convertCollectionStringToJson(this.ipBlacklist.getAll()));
     }
-    builder.append("\r\n └ 正在处理的请求数量: ").append(getCacheFactory().getCache(TioCoreConfigKeys.REQEUST_PROCESSING).keysCollection().size());
-    // builder.append("\r\n └ 线程池信息: \n").append(Threads.status());
-    log.warn(builder.toString());
-    long end = SystemTimer.currTime;
-    long iv1 = start1 - start;
-    long iv = end - start1;
-    log.warn("{}, 检查心跳, 共{}个连接, 取锁耗时{}ms, 循环耗时{}ms, 心跳超时时间:{}ms", name, count, iv1, iv, heartbeatTimeout);
+    builder.append("\r\n └ 正在处理的请求数量: ")
+        .append(getCacheFactory().getCache(TioCoreConfigKeys.REQEUST_PROCESSING).keysCollection().size());
+
+    BufferMomeryInfo bufferMomeryInfo = BufferPoolUtils.getBufferMomeryInfo();
+    if (bufferMomeryInfo != null) {
+      builder.append("\r\n └ BufferMomeryInfo: ");
+      builder.append("\r\n   \t ├ directCount: ").append(bufferMomeryInfo.directCount);
+      builder.append("\r\n   \t ├ directMemoryUsed: ").append(bufferMomeryInfo.directMemoryUsed).append(" bytes");
+      builder.append("\r\n   \t ├ totalCapacity: ").append(bufferMomeryInfo.totalCapacity).append(" bytes");
+
+      if (bufferMomeryInfo.responseMemoryStat != null) {
+        builder.append("\r\n   \t ├ responseMemoryStat: ").append(formatStat(bufferMomeryInfo.responseMemoryStat));
+      }
+
+      if (bufferMomeryInfo.requestBufferMemoryStat != null) {
+        builder.append("\r\n   \t ├ requestBufferMemoryStat:");
+        for (BufferMemoryStat stat : bufferMomeryInfo.requestBufferMemoryStat) {
+          if (stat != null) {
+            builder.append("\r\n   \t │ ").append(formatStat(stat));
+          }
+        }
+      }
+
+      if (bufferMomeryInfo.responseBufferMemoryStat != null) {
+        builder.append("\r\n   \t ├ responseBufferMemoryStat:");
+        for (BufferMemoryStat stat : bufferMomeryInfo.responseBufferMemoryStat) {
+          if (stat != null) {
+            builder.append("\r\n   \t │ ").append(formatStat(stat));
+          }
+        }
+      }
+    }
+
+    log.info(builder.toString());
   }
+
+  private String formatStat(BufferMemoryStat stat) {
+    return String.format("size=%d, newAlloc=%d, cleanCount=%d, reuseHit=%d", stat.bufferSize, stat.statNewAlloc,
+        stat.statCleanCount, stat.statReuseHit);
+  }
+
 }

@@ -47,6 +47,17 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class TioConfig extends MapWithLockPropSupport {
   /**
+   * 默认的接收数据的buffer size
+   */
+  public static final int READ_BUFFER_SIZE = EnvUtils.getInt(TioCoreConfigKeys.TIO_DEFAULT_READ_BUFFER_SIZE, 8192);
+  public static final int WRITE_CHUNK_SIZE = EnvUtils.getInt(TioCoreConfigKeys.TIO_DEFAULT_WRITE_CHUNK_SIZE, 8192);
+  /** 是否使用直接内存缓冲区（可通过环境变量开关） */
+  public static final boolean direct = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_BUFFER_DIRECT, true);
+  private int workerThreads = EnvUtils.getInt(TioCoreConfigKeys.TIO_CORE_THREADS,
+      Runtime.getRuntime().availableProcessors() * 4);
+  public boolean disgnostic = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_DIAGNOSTIC);
+
+  /**
    * 本jvm中所有的ServerTioConfig对象
    */
   public static final Set<ServerTioConfig> ALL_SERVER_GROUPCONTEXTS = new HashSet<>();
@@ -58,17 +69,12 @@ public abstract class TioConfig extends MapWithLockPropSupport {
    * 本jvm中所有的TioConfig对象
    */
   public static final Set<TioConfig> ALL_GROUPCONTEXTS = new HashSet<>();
-  /**
-   * 默认的接收数据的buffer size
-   */
-  public static final int READ_BUFFER_SIZE = EnvUtils.getInt("tio.default.read.buffer.size", 8192);
-  public static final int WRITE_CHUNK_SIZE = EnvUtils.getInt("tio.default.write.chunk.size", 8192);
 
   private final static AtomicInteger ID_ATOMIC = new AtomicInteger();
   private ByteOrder byteOrder = ByteOrder.BIG_ENDIAN;
   public boolean isShortConnection = false;
   public SslConfig sslConfig = null;
-  public boolean debug = false;
+
   public GroupStat groupStat = null;
   public boolean statOn = true;
 
@@ -78,9 +84,6 @@ public abstract class TioConfig extends MapWithLockPropSupport {
   public PacketConverter packetConverter = null;
 
   private String charset = TioConst.CHARSET_NAME;
-
-  private int workerThreads = EnvUtils.getInt(TioCoreConfigKeys.TIO_CORE_THREADS,
-      Runtime.getRuntime().availableProcessors() * 4);
 
   /**
    * 缓存工厂
@@ -135,9 +138,8 @@ public abstract class TioConfig extends MapWithLockPropSupport {
   public IpBlacklist ipBlacklist = null;
   public MapWithLock<Integer, Packet> waitingResps = new MapWithLock<Integer, Packet>(new HashMap<Integer, Packet>());
 
-  public boolean disgnostic = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_DIAGNOSTIC);
-
   public TioConfig() {
+    
   }
 
   public TioConfig(CacheFactory cacheFactory) {

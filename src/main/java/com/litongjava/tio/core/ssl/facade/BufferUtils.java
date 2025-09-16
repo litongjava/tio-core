@@ -6,7 +6,7 @@ public class BufferUtils {
 	static void copy(ByteBuffer from, ByteBuffer to) {
 		to.put(from);
 		to.flip();
-		to.limit(to.capacity()); //added by tanyaowu
+		to.limit(to.capacity());
 	}
 
 	public static ByteBuffer slice(ByteBuffer data) {

@@ -11,7 +11,7 @@ import java.nio.channels.CompletionHandler;
 import com.litongjava.enhance.buffer.VirtualBuffer;
 import com.litongjava.tio.consts.TioCoreConfigKeys;
 import com.litongjava.tio.core.ReadCompletionHandler;
-import com.litongjava.tio.core.pool.BufferPageUtils;
+import com.litongjava.tio.core.pool.BufferPoolUtils;
 import com.litongjava.tio.core.ssl.SslUtils;
 import com.litongjava.tio.core.stat.IpStat;
 import com.litongjava.tio.core.utils.IpBlacklistUtils;
@@ -123,7 +123,7 @@ public class AcceptCompletionHandler implements CompletionHandler<AsynchronousSo
 
       if (!tioServer.isWaitingStop()) {
         ReadCompletionHandler readCompletionHandler = new ReadCompletionHandler(channelContext);
-        VirtualBuffer attachment = BufferPageUtils.allocate(channelContext.getReadBufferSize());
+        VirtualBuffer attachment = BufferPoolUtils.allocateRequest(channelContext.getReadBufferSize());
         ByteBuffer readByteBuffer = attachment.buffer();
         readByteBuffer.position(0);
         readByteBuffer.limit(readByteBuffer.capacity());

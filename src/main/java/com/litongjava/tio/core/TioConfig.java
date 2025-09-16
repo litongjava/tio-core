@@ -62,6 +62,8 @@ public abstract class TioConfig extends MapWithLockPropSupport {
    * 默认的接收数据的buffer size
    */
   public static final int READ_BUFFER_SIZE = EnvUtils.getInt("tio.default.read.buffer.size", 8192);
+  public static final int WRITE_CHUNK_SIZE = EnvUtils.getInt("tio.default.write.chunk.size", 8192);
+
   private final static AtomicInteger ID_ATOMIC = new AtomicInteger();
   private ByteOrder byteOrder = ByteOrder.BIG_ENDIAN;
   public boolean isShortConnection = false;
@@ -77,7 +79,8 @@ public abstract class TioConfig extends MapWithLockPropSupport {
 
   private String charset = TioConst.CHARSET_NAME;
 
-  private int workerThreads = EnvUtils.getInt(TioCoreConfigKeys.TIO_CORE_THREADS, Runtime.getRuntime().availableProcessors() * 4);
+  private int workerThreads = EnvUtils.getInt(TioCoreConfigKeys.TIO_CORE_THREADS,
+      Runtime.getRuntime().availableProcessors() * 4);
 
   /**
    * 缓存工厂
@@ -337,7 +340,8 @@ public abstract class TioConfig extends MapWithLockPropSupport {
   @SuppressWarnings({ "rawtypes", "unchecked" })
   public void setDefaultIpRemovalListenerWrapper() {
     this.ipRemovalListenerWrapper = new RemovalListenerWrapper();
-    IpStatMapCacheRemovalListener ipStatMapCacheRemovalListener = new IpStatMapCacheRemovalListener(this, ipStatListener);
+    IpStatMapCacheRemovalListener ipStatMapCacheRemovalListener = new IpStatMapCacheRemovalListener(this,
+        ipStatListener);
     ipRemovalListenerWrapper.setListener(ipStatMapCacheRemovalListener);
   }
 

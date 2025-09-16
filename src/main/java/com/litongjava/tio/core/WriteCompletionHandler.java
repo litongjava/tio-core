@@ -1,14 +1,13 @@
 package com.litongjava.tio.core;
 
-import java.nio.ByteBuffer;
 import java.nio.channels.CompletionHandler;
 import java.util.List;
 
 import com.litongjava.aio.Packet;
 import com.litongjava.aio.PacketMeta;
-import com.litongjava.enhance.buffer.DirectBufferReleaser;
 import com.litongjava.tio.consts.TioCoreConfigKeys;
 import com.litongjava.tio.core.ChannelContext.CloseCode;
+import com.litongjava.tio.core.pool.BufferPoolUtils;
 import com.litongjava.tio.core.stat.IpStat;
 import com.litongjava.tio.core.task.SendPacketTask;
 import com.litongjava.tio.core.vo.WriteCompletionVo;
@@ -42,12 +41,14 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, WriteC
     if (bytesWritten > 0) {
       channelContext.stat.latestTimeOfSentByte = SystemTimer.currTime;
     }
+
     if (writeCompletionVo.getByteBuffer().hasRemaining()) {
       channelContext.asynchronousSocketChannel.write(writeCompletionVo.getByteBuffer(), writeCompletionVo, this);
+
     } else {
       handle(bytesWritten, null, writeCompletionVo);
-      // 2) 再安全释放/归还（只在写“完成”时）
-      safeReleaseAfterWrite(writeCompletionVo);
+
+      BufferPoolUtils.clean(writeCompletionVo.getByteBuffer());
 
       // 只有写完了当前数据包，才处理下一个包
       processNextPacket(channelContext);
@@ -57,6 +58,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, WriteC
   @Override
   public void failed(Throwable throwable, WriteCompletionVo writeCompletionVo) {
     handle(0, throwable, writeCompletionVo);
+    BufferPoolUtils.clean(writeCompletionVo.getByteBuffer());
     processNextPacket(channelContext);
   }
 
@@ -148,30 +150,6 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, WriteC
         log.info(msg);
       }
       Tio.close(channelContext, msg);
-    }
-  }
-
-  private void safeReleaseAfterWrite(WriteCompletionVo vo) {
-    final ByteBuffer buf = vo.getByteBuffer();
-    if (buf == null) {
-      return;
-    }
-
-    // 优先：池化归还
-    final Runnable returnToPool = vo.getReturnToPool();
-    if (returnToPool != null) {
-      try {
-        returnToPool.run(); // 归还池里可自行 clear()/reset()
-      } catch (Throwable e) {
-        if (DIAGNOSTIC_LOG_ENABLED)
-          log.warn("returnToPool error", e);
-      }
-      return;
-    }
-
-    // 其次：非池化显式释放（仅 direct）
-    if (vo.isAutoRelease() && buf.isDirect()) {
-      DirectBufferReleaser.submit(buf);
     }
   }
 }

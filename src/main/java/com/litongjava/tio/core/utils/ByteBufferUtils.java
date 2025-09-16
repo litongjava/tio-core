@@ -9,19 +9,18 @@ import com.litongjava.tio.utils.hutool.StrUtil;
 
 /**
  * 
- * @author tanyaowu 
- * 2017年10月19日 上午9:41:00
+ * @author tanyaowu 2017年10月19日 上午9:41:00
  */
 public class ByteBufferUtils {
   /**
    * 组合两个bytebuffer，把可读部分的组合成一个新的bytebuffer
+   * 
    * @param byteBuffer1
    * @param byteBuffer2
    */
   public static ByteBuffer composite(ByteBuffer byteBuffer1, ByteBuffer byteBuffer2) {
     int capacity = byteBuffer1.remaining() + byteBuffer2.remaining();
     ByteBuffer ret = ByteBuffer.allocate(capacity);
-
     ret.put(byteBuffer1);
     ret.put(byteBuffer2);
 
@@ -44,7 +43,7 @@ public class ByteBufferUtils {
 
   /**
    *
-   * @param src 本方法不会改变position等指针变量
+   * @param src        本方法不会改变position等指针变量
    * @param startindex 从0开始
    * @param endindex
    * @return
@@ -149,8 +148,8 @@ public class ByteBufferUtils {
 
   /**
    * 
-   * @param buffer position会被移动
-   * @param theChar 结束
+   * @param buffer    position会被移动
+   * @param theChar   结束
    * @param maxlength
    * @return
    * @throws LengthOverflowException
@@ -254,7 +253,8 @@ public class ByteBufferUtils {
    * @throws LengthOverflowException
    * @author tanyaowu
    */
-  public static String readString(ByteBuffer buffer, String charset, char endChar, Integer maxlength) throws LengthOverflowException {
+  public static String readString(ByteBuffer buffer, String charset, char endChar, Integer maxlength)
+      throws LengthOverflowException {
     // boolean canEnd = false;
     int startPosition = buffer.position();
     int endPosition = indexOf(buffer, endChar, maxlength);
@@ -285,6 +285,7 @@ public class ByteBufferUtils {
 
   /**
    * 获取utf-8字符串
+   * 
    * @param bytes
    * @return
    * 
@@ -294,16 +295,18 @@ public class ByteBufferUtils {
   }
 
   /**
-  * 读取byte
-  * @param buffer
-  * @return
-  */
+   * 读取byte
+   * 
+   * @param buffer
+   * @return
+   */
   public static byte read(ByteBuffer buffer) {
     return buffer.get();
   }
 
   /**
    * 读取short
+   * 
    * @param buffer
    * @return
    */

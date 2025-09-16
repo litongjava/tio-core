@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import com.litongjava.enhance.buffer.VirtualBuffer;
 import com.litongjava.tio.consts.TioCoreConfigKeys;
 import com.litongjava.tio.core.ChannelContext.CloseCode;
-import com.litongjava.tio.core.pool.BufferPageUtils;
+import com.litongjava.tio.core.pool.BufferPoolUtils;
 import com.litongjava.tio.core.stat.IpStat;
 import com.litongjava.tio.core.task.DecodeTask;
 import com.litongjava.tio.core.utils.ByteBufferUtils;
@@ -145,7 +145,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, Virtual
       readByteBuffer.limit(readByteBuffer.capacity());
     } else {
       virtualBuffer.clean();
-      virtualBuffer = BufferPageUtils.allocate(channelContext.getReadBufferSize());
+      virtualBuffer = BufferPoolUtils.allocateRequest(channelContext.getReadBufferSize());
       readByteBuffer = virtualBuffer.buffer();
     }
 

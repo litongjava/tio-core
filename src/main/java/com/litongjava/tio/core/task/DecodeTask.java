@@ -26,7 +26,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DecodeTask {
 
-  private final static boolean DIAGNOSTIC_LOG_ENABLED = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_DIAGNOSTIC, false);
+  private final static boolean DIAGNOSTIC_LOG_ENABLED = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_DIAGNOSTIC,
+      false);
 
   /**
    * 上一次解码剩下的数据
@@ -64,7 +65,8 @@ public class DecodeTask {
             if (percentage != lastPercentage) {
               lastPercentage = percentage;
               if (tioConfig.disgnostic) {
-                log.info("Receiving large packet: received {}% of {} bytes.", percentage, channelContext.packetNeededLength);
+                log.info("Receiving large packet: received {}% of {} bytes.", percentage,
+                    channelContext.packetNeededLength);
               }
             }
             lastByteBuffer = ByteBufferUtils.copy(byteBuffer, initPosition, limit);
@@ -89,7 +91,8 @@ public class DecodeTask {
               // int capacity = lastByteBuffer.capacity();
               int per = readableLength / channelStat.decodeFailCount;
               if (per < Math.min(channelContext.getReadBufferSize() / 2, 256)) {
-                String str = "Failed to decode continuously " + channelStat.decodeFailCount + " times unsuccessfully, and the average data received each time is " + per
+                String str = "Failed to decode continuously " + channelStat.decodeFailCount
+                    + " times unsuccessfully, and the average data received each time is " + per
                     + " bytes, which suggests the possibility of a slow attack";
                 log.warn(str);
                 throw new AioDecodeException(str);
@@ -99,7 +102,9 @@ public class DecodeTask {
 
           if (log.isInfoEnabled() && !channelContext.getTioConfig().ignoreDecodeFail) {
             if (channelStat.decodeFailCount > 3 && channelContext.packetNeededLength == null) {
-              log.info("{} Failed to decode for {} consecutive times, the length of data involved in decoding is {} bytes.", channelContext, channelStat.decodeFailCount, readableLength);
+              log.info(
+                  "{} Failed to decode for {} consecutive times, the length of data involved in decoding is {} bytes.",
+                  channelContext, channelStat.decodeFailCount, readableLength);
             }
           }
 
@@ -154,7 +159,8 @@ public class DecodeTask {
           if (byteBuffer.hasRemaining()) {
             // 组包后，还剩有数据
             if (log.isDebugEnabled()) {
-              log.debug("{},After grouping packets, there is still data left:{}", channelContext, byteBuffer.remaining());
+              log.debug("{},After grouping packets, there is still data left:{}", channelContext,
+                  byteBuffer.remaining());
             }
             continue label_2;
           } else {

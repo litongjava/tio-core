@@ -183,7 +183,10 @@ public class ServerTioConfig extends TioConfig {
     this.groupStat = new ServerGroupStat();
     GlobalIpBlacklist.INSTANCE.init(this);
     startHeartbeatCheck();
-    GlobalScheduler.scheduleWithFixedDelay(this::printStats, 60, 60, TimeUnit.SECONDS);
+    if (printStats) {
+      GlobalScheduler.scheduleWithFixedDelay(this::printStats, 60, 60, TimeUnit.SECONDS);
+    }
+
   }
 
   private void startHeartbeatCheck() {

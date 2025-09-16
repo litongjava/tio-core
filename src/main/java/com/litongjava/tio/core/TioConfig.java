@@ -56,6 +56,7 @@ public abstract class TioConfig extends MapWithLockPropSupport {
   private int workerThreads = EnvUtils.getInt(TioCoreConfigKeys.TIO_CORE_THREADS,
       Runtime.getRuntime().availableProcessors() * 4);
   public boolean disgnostic = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_DIAGNOSTIC);
+  public boolean printStats = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_STATS_PRINT);
 
   /**
    * 本jvm中所有的ServerTioConfig对象
@@ -139,7 +140,7 @@ public abstract class TioConfig extends MapWithLockPropSupport {
   public MapWithLock<Integer, Packet> waitingResps = new MapWithLock<Integer, Packet>(new HashMap<Integer, Packet>());
 
   public TioConfig() {
-    
+
   }
 
   public TioConfig(CacheFactory cacheFactory) {

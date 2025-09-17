@@ -5,7 +5,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import com.litongjava.aio.Packet;
-import com.litongjava.tio.consts.TioCoreConfigKeys;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.ChannelContext.CloseCode;
 import com.litongjava.tio.core.Tio;
@@ -17,7 +16,6 @@ import com.litongjava.tio.core.stat.IpStat;
 import com.litongjava.tio.core.utils.ByteBufferUtils;
 import com.litongjava.tio.exception.TioHandlePacketException;
 import com.litongjava.tio.utils.SystemTimer;
-import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.hutool.CollUtil;
 
 import lombok.extern.slf4j.Slf4j;
@@ -26,8 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DecodeTask {
 
-  private final static boolean DIAGNOSTIC_LOG_ENABLED = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_DIAGNOSTIC,
-      false);
+  private final static boolean DIAGNOSTIC_LOG_ENABLED = TioConfig.disgnostic;
 
   /**
    * 上一次解码剩下的数据
@@ -64,7 +61,7 @@ public class DecodeTask {
             int percentage = (int) (((double) readableLength / channelContext.packetNeededLength) * 100);
             if (percentage != lastPercentage) {
               lastPercentage = percentage;
-              if (tioConfig.disgnostic) {
+              if (DIAGNOSTIC_LOG_ENABLED) {
                 log.info("Receiving large packet: received {}% of {} bytes.", percentage,
                     channelContext.packetNeededLength);
               }
@@ -195,7 +192,6 @@ public class DecodeTask {
         } else {
           log.error(e.getMessage(), e);
         }
-
         Tio.close(channelContext, e, "Decode exception:" + e.getMessage(), CloseCode.DECODE_ERROR);
         return;
       }

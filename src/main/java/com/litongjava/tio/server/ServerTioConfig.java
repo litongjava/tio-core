@@ -261,59 +261,62 @@ public class ServerTioConfig extends TioConfig {
   private void printStats() {
     StringBuilder builder = new StringBuilder();
     builder.append(SysConst.CRLF).append(name);
-    builder.append("\r\n ├ 当前时间:").append(SystemTimer.currTime);
-    builder.append("\r\n ├ 连接统计");
-    builder.append("\r\n │ \t ├ 共接受过连接数 :").append(((ServerGroupStat) groupStat).accepted.get());
-    builder.append("\r\n │ \t ├ 当前连接数 :").append(this.connections.getObj().size());
-    builder.append("\r\n │ \t ├ 异IP连接数 :").append(this.ips.getIpmap().getObj().size());
-    builder.append("\r\n │ \t └ 关闭过的连接数 :").append(groupStat.closed.get());
+    builder.append("\r\n ├ Current Time: ").append(SystemTimer.currTime);
 
-    builder.append("\r\n ├ 消息统计");
-    builder.append("\r\n │ \t ├ 已处理消息 :").append(groupStat.handledPackets.get());
-    builder.append("\r\n │ \t ├ 已接收消息(packet/byte) :").append(groupStat.receivedPackets.get()).append("/")
+    builder.append("\r\n ├ Connection Statistics");
+    builder.append("\r\n │ \t ├ Total Accepted Connections: ").append(((ServerGroupStat) groupStat).accepted.get());
+    builder.append("\r\n │ \t ├ Current Connections: ").append(this.connections.getObj().size());
+    builder.append("\r\n │ \t ├ Unique IP Connections: ").append(this.ips.getIpmap().getObj().size());
+    builder.append("\r\n │ \t └ Closed Connections: ").append(groupStat.closed.get());
+
+    builder.append("\r\n ├ Message Statistics");
+    builder.append("\r\n │ \t ├ Processed Messages: ").append(groupStat.handledPackets.get());
+    builder.append("\r\n │ \t ├ Received Messages (packet/byte): ").append(groupStat.receivedPackets.get()).append("/")
         .append(groupStat.receivedBytes.get());
-    builder.append("\r\n │ \t ├ 已发送消息(packet/byte) :").append(groupStat.sentPackets.get()).append("/")
+    builder.append("\r\n │ \t ├ Sent Messages (packet/byte): ").append(groupStat.sentPackets.get()).append("/")
         .append(groupStat.sentBytes.get()).append("b");
-    builder.append("\r\n │ \t ├ 平均每次TCP包接收的字节数 :").append(groupStat.getBytesPerTcpReceive());
-    builder.append("\r\n │ \t └ 平均每次TCP包接收的业务包 :").append(groupStat.getPacketsPerTcpReceive());
+    builder.append("\r\n │ \t ├ Avg Bytes Per TCP Receive: ").append(groupStat.getBytesPerTcpReceive());
+    builder.append("\r\n │ \t └ Avg Packets Per TCP Receive: ").append(groupStat.getPacketsPerTcpReceive());
 
-    builder.append("\r\n └ IP统计时段 ");
+    builder.append("\r\n └ IP Statistics Duration");
     if (CollUtil.isNotEmpty(ipStats.durationList)) {
       builder.append("\r\n   \t └ ").append(AppendJsonConverter.convertListLongToJson(this.ipStats.durationList));
     } else {
-      builder.append("\r\n   \t └ ").append("没有设置ip统计时间");
+      builder.append("\r\n   \t └ ").append("No IP statistics duration set");
     }
 
-    builder.append("\r\n ├ 节点统计");
-    builder.append("\r\n │ \t ├ clientNodes :").append(this.clientNodes.getObjWithLock().getObj().size());
-    builder.append("\r\n │ \t ├ 所有连接 :").append(this.connections.getObj().size());
-    builder.append("\r\n │ \t ├ 绑定user数 :").append(this.users.getMap().getObj().size());
-    builder.append("\r\n │ \t ├ 绑定token数 :").append(this.tokens.getMap().getObj().size());
-    builder.append("\r\n │ \t └ 等待同步消息响应 :").append(this.waitingResps.getObj().size());
+    builder.append("\r\n ├ Node Statistics");
+    builder.append("\r\n │ \t ├ Client Nodes: ").append(this.clientNodes.getObjWithLock().getObj().size());
+    builder.append("\r\n │ \t ├ All Connections: ").append(this.connections.getObj().size());
+    builder.append("\r\n │ \t ├ Bound Users: ").append(this.users.getMap().getObj().size());
+    builder.append("\r\n │ \t ├ Bound Tokens: ").append(this.tokens.getMap().getObj().size());
+    builder.append("\r\n │ \t └ Pending Response Messages: ").append(this.waitingResps.getObj().size());
 
-    builder.append("\r\n ├ 群组");
-    builder.append("\r\n │ \t └ groupmap:").append(this.groups.getGroupmap().getObj().size());
-    builder.append("\r\n └ 拉黑IP ");
+    builder.append("\r\n ├ Groups");
+    builder.append("\r\n │ \t └ Group Map Size: ").append(this.groups.getGroupmap().getObj().size());
+
+    builder.append("\r\n └ Blacklisted IPs");
     if (this.ipBlacklist != null) {
       builder.append("\r\n   \t └ ")
           .append(AppendJsonConverter.convertCollectionStringToJson(this.ipBlacklist.getAll()));
     }
-    builder.append("\r\n └ 正在处理的请求数量: ")
+
+    builder.append("\r\n └ Requests Being Processed: ")
         .append(getCacheFactory().getCache(TioCoreConfigKeys.REQEUST_PROCESSING).keysCollection().size());
 
     BufferMomeryInfo bufferMomeryInfo = BufferPoolUtils.getBufferMomeryInfo();
     if (bufferMomeryInfo != null) {
-      builder.append("\r\n └ BufferMomeryInfo: ");
-      builder.append("\r\n   \t ├ directCount: ").append(bufferMomeryInfo.directCount);
-      builder.append("\r\n   \t ├ directMemoryUsed: ").append(bufferMomeryInfo.directMemoryUsed).append(" bytes");
-      builder.append("\r\n   \t ├ totalCapacity: ").append(bufferMomeryInfo.totalCapacity).append(" bytes");
+      builder.append("\r\n └ BufferMemoryInfo: ");
+      builder.append("\r\n   \t ├ Direct Count: ").append(bufferMomeryInfo.directCount);
+      builder.append("\r\n   \t ├ Direct Memory Used: ").append(bufferMomeryInfo.directMemoryUsed).append(" bytes");
+      builder.append("\r\n   \t ├ Total Capacity: ").append(bufferMomeryInfo.totalCapacity).append(" bytes");
 
       if (bufferMomeryInfo.responseMemoryStat != null) {
-        builder.append("\r\n   \t ├ responseMemoryStat: ").append(formatStat(bufferMomeryInfo.responseMemoryStat));
+        builder.append("\r\n   \t ├ Response Memory Stat: ").append(formatStat(bufferMomeryInfo.responseMemoryStat));
       }
 
       if (bufferMomeryInfo.requestBufferMemoryStat != null) {
-        builder.append("\r\n   \t ├ requestBufferMemoryStat:");
+        builder.append("\r\n   \t ├ Request Buffer Memory Stats:");
         for (BufferMemoryStat stat : bufferMomeryInfo.requestBufferMemoryStat) {
           if (stat != null) {
             builder.append("\r\n   \t │ ").append(formatStat(stat));
@@ -322,7 +325,7 @@ public class ServerTioConfig extends TioConfig {
       }
 
       if (bufferMomeryInfo.responseBufferMemoryStat != null) {
-        builder.append("\r\n   \t ├ responseBufferMemoryStat:");
+        builder.append("\r\n   \t ├ Response Buffer Memory Stats:");
         for (BufferMemoryStat stat : bufferMomeryInfo.responseBufferMemoryStat) {
           if (stat != null) {
             builder.append("\r\n   \t │ ").append(formatStat(stat));

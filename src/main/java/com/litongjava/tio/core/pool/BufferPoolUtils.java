@@ -198,8 +198,8 @@ public class BufferPoolUtils {
     for (BufferPoolMXBean p : pools) {
       if ("direct".equalsIgnoreCase(p.getName())) {
         long count = p.getCount();
-        long l = p.getMemoryUsed() / 1024 / 1024;
-        long m = p.getTotalCapacity() / 1024 / 1024;
+        long l = p.getMemoryUsed();
+        long m = p.getTotalCapacity();
         bufferMomeryInfo.directCount = count;
         bufferMomeryInfo.directMemoryUsed = l;
         bufferMomeryInfo.totalCapacity = m;

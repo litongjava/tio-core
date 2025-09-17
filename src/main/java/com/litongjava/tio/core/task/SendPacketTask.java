@@ -37,8 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SendPacketTask {
 
-  private final static boolean DIAGNOSTIC_LOG_ENABLED = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_DIAGNOSTIC,
-      false);
+  private final static boolean disgnostic = TioConfig.disgnostic;
 
   public boolean canSend = true;
   private ChannelContext channelContext = null;
@@ -69,7 +68,7 @@ public class SendPacketTask {
   }
 
   public boolean sendPacket(Packet packet) {
-    if (DIAGNOSTIC_LOG_ENABLED) {
+    if (disgnostic) {
       log.info("send:{},{}", channelContext.getClientNode(), packet);
     }
     // 将数据包加入队列
@@ -183,7 +182,6 @@ public class SendPacketTask {
     if (!TioUtils.checkBeforeIO(channelContext)) {
       return;
     }
-
 
     // WriteCompletionVo：支持 returnToPool 参数
     WriteCompletionVo writeCompletionVo = new WriteCompletionVo(byteBuffer, packets);

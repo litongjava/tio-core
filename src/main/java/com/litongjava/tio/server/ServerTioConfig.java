@@ -24,6 +24,7 @@ import com.litongjava.tio.server.intf.ServerAioHandler;
 import com.litongjava.tio.server.intf.ServerAioListener;
 import com.litongjava.tio.utils.AppendJsonConverter;
 import com.litongjava.tio.utils.SystemTimer;
+import com.litongjava.tio.utils.executor.TioThreadPoolStats;
 import com.litongjava.tio.utils.hutool.CollUtil;
 import com.litongjava.tio.utils.hutool.StrUtil;
 import com.litongjava.tio.utils.lock.SetWithLock;
@@ -334,7 +335,33 @@ public class ServerTioConfig extends TioConfig {
       }
     }
 
+    if (TioServerExecutorService.tioThreadPoolExecutor != null) {
+      TioThreadPoolStats stats = TioServerExecutorService.tioThreadPoolExecutor.getStats();
+
+      int poolSize = stats.getPoolSize();
+      int active = stats.getActiveCount();
+
+      builder.append("\r\n ├ Thread Pool Statistics");
+      builder.append("\r\n │ \t ├ Pool Size / Active / Largest : ").append(poolSize).append(" / ").append(active)
+          .append(" / ").append(stats.getLargestPoolSize());
+      builder.append("\r\n │ \t ├ Completed Task Count        : ").append(stats.getCompletedTaskCount());
+      builder.append("\r\n │ \t ├ Queue Size                  : ").append(stats.getQueueSize());
+      builder.append("\r\n │ \t ├ Shutdown / Terminated       : ").append(stats.isShutdown()).append(" / ")
+          .append(stats.isTerminated());
+
+      builder.append("\r\n │ \t ├ Submitted / Started / Completed / Failed / Rejected : ").append(stats.getSubmitted())
+          .append(" / ").append(stats.getStarted()).append(" / ").append(stats.getCompleted()).append(" / ")
+          .append(stats.getFailed()).append(" / ").append(stats.getRejected());
+
+      builder.append("\r\n │ \t └ AvgQueueMs / AvgExecMs / MaxExecMs : ").append(formatMs(stats.getAvgQueueMs()))
+          .append(" / ").append(formatMs(stats.getAvgExecMs())).append(" / ").append(formatMs(stats.getMaxExecMs()));
+    }
+
     log.info(builder.toString());
+  }
+
+  private static String formatMs(double v) {
+    return String.format("%.3f", v);
   }
 
   private String formatStat(BufferMemoryStat stat) {

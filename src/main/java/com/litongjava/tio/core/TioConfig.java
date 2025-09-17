@@ -53,11 +53,13 @@ public abstract class TioConfig extends MapWithLockPropSupport {
   public static final int WRITE_CHUNK_SIZE = EnvUtils.getInt(TioCoreConfigKeys.TIO_DEFAULT_WRITE_CHUNK_SIZE, 8192);
   /** 是否使用直接内存缓冲区（可通过环境变量开关） */
   public static final boolean direct = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_BUFFER_DIRECT, true);
+  
+  public static boolean disgnostic = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_DIAGNOSTIC);
+  public static boolean printStats = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_STATS_PRINT);
+
   private int workerThreads = EnvUtils.getInt(TioCoreConfigKeys.TIO_CORE_THREADS,
       Runtime.getRuntime().availableProcessors() * 4);
-  public boolean disgnostic = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_DIAGNOSTIC);
-  public boolean printStats = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_STATS_PRINT);
-
+  
   /**
    * 本jvm中所有的ServerTioConfig对象
    */

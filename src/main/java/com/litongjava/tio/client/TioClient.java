@@ -53,7 +53,7 @@ public class TioClient {
     super();
     this.clientTioConfig = clientTioConfig;
     if (EnvUtils.getBoolean("tio.core.hotswap.reload", false)) {
-      this.channelGroup = AsynchronousChannelGroup.withThreadPool(Threads.getGroupExecutor());
+      this.channelGroup = AsynchronousChannelGroup.withThreadPool(Threads.getReadExecutor());
     }
 
     startHeartbeatTask();

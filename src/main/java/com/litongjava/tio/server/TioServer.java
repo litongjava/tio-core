@@ -5,6 +5,7 @@ import java.net.InetSocketAddress;
 import java.net.StandardSocketOptions;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -16,6 +17,7 @@ import com.litongjava.tio.consts.TioCoreConfigKeys;
 import com.litongjava.tio.core.Node;
 import com.litongjava.tio.utils.Threads;
 import com.litongjava.tio.utils.environment.EnvUtils;
+import com.litongjava.tio.utils.executor.TioThreadPoolExecutor;
 import com.litongjava.tio.utils.hutool.StrUtil;
 
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +31,7 @@ public class TioServer {
   private AsynchronousServerSocketChannel serverSocketChannel;
   private Node serverNode;
   private boolean isWaitingStop = false;
-  private static ExecutorService groupExecutor;
+  private static ExecutorService readExecutor;
   private static AsynchronousChannelGroup channelGroup;
 
   public TioServer(ServerTioConfig serverTioConfig) {
@@ -85,25 +87,32 @@ public class TioServer {
 
     this.serverNode = new Node(serverIp, serverPort);
     if (EnvUtils.getBoolean("tio.core.hotswap.reload", false)) {
-      groupExecutor = Threads.getGroupExecutor();
-      channelGroup = AsynchronousChannelGroup.withThreadPool(groupExecutor);
+      readExecutor = Threads.getReadExecutor();
+      channelGroup = AsynchronousChannelGroup.withThreadPool(readExecutor);
       serverSocketChannel = AsynchronousServerSocketChannel.open(channelGroup);
     } else {
-      //serverSocketChannel = AsynchronousServerSocketChannel.open();
-      EnhanceAsynchronousChannelProvider provider = new EnhanceAsynchronousChannelProvider(false);
+      // serverSocketChannel = AsynchronousServerSocketChannel.open();
       int workerThreads = serverTioConfig.getWorkerThreads();
-      log.info("{} workerThreads:{}", serverTioConfig.getName(), workerThreads);
+      log.info("{} worker threads:{}", serverTioConfig.getName(), workerThreads);
       AtomicInteger threadNumber = new AtomicInteger(1);
 
-      AsynchronousChannelGroup group = provider.openAsynchronousChannelGroup(workerThreads, new ThreadFactory() {
+      ThreadFactory threadFactory = new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
           return new Thread(r, "t-io-" + threadNumber.getAndIncrement());
         }
-      });
+      };
+
+      TioThreadPoolExecutor tioThreadPoolExecutor = new TioThreadPoolExecutor(workerThreads, workerThreads, 0L,
+          TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(workerThreads), threadFactory);
+
+      TioServerExecutorService.tioThreadPoolExecutor = tioThreadPoolExecutor;
+      EnhanceAsynchronousChannelProvider provider = new EnhanceAsynchronousChannelProvider(false);
+      AsynchronousChannelGroup group = provider.openAsynchronousChannelGroup(tioThreadPoolExecutor, 2);
 
       // 使用提供者创建服务器通道
-      serverSocketChannel = (EnhanceAsynchronousServerSocketChannel) provider.openAsynchronousServerSocketChannel(group);
+      serverSocketChannel = (EnhanceAsynchronousServerSocketChannel) provider
+          .openAsynchronousServerSocketChannel(group);
     }
 
     serverSocketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
@@ -129,6 +138,7 @@ public class TioServer {
   /**
    * 
    * @return`
+   * 
    * @author tanyaowu
    */
   public boolean stop() {
@@ -145,10 +155,10 @@ public class TioServer {
       }
     }
 
-    if (groupExecutor != null && !groupExecutor.isShutdown()) {
+    if (readExecutor != null && !readExecutor.isShutdown()) {
       try {
-        groupExecutor.shutdownNow();
-        if (!groupExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+        readExecutor.shutdownNow();
+        if (!readExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
           log.warn("groupExecutor did not terminate within the timeout");
         }
       } catch (Exception e) {

@@ -108,7 +108,7 @@ public class TioServer {
 
       TioServerExecutorService.tioThreadPoolExecutor = tioThreadPoolExecutor;
       EnhanceAsynchronousChannelProvider provider = new EnhanceAsynchronousChannelProvider(false);
-      AsynchronousChannelGroup group = provider.openAsynchronousChannelGroup(tioThreadPoolExecutor, 2);
+      AsynchronousChannelGroup group = provider.openAsynchronousChannelGroup(tioThreadPoolExecutor, workerThreads);
 
       // 使用提供者创建服务器通道
       serverSocketChannel = (EnhanceAsynchronousServerSocketChannel) provider

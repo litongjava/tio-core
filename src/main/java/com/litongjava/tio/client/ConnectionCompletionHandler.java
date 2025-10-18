@@ -6,7 +6,7 @@ import java.nio.channels.CompletionHandler;
 
 import com.litongjava.enhance.buffer.VirtualBuffer;
 import com.litongjava.tio.client.intf.ClientAioListener;
-import com.litongjava.tio.core.ChannelContext.CloseCode;
+import com.litongjava.tio.core.ChannelCloseCode;
 import com.litongjava.tio.core.Node;
 import com.litongjava.tio.core.ReadCompletionHandler;
 import com.litongjava.tio.core.Tio;
@@ -103,7 +103,7 @@ public class ConnectionCompletionHandler implements CompletionHandler<Void, Conn
         }
         boolean f = ReconnConf.put(channelContext);
         if (!f) {
-          Tio.close(channelContext, null, "不需要重连，关闭该连接", true, false, CloseCode.CLIENT_CONNECTION_FAIL);
+          Tio.close(channelContext, null, "不需要重连，关闭该连接", true, false, ChannelCloseCode.CLIENT_CONNECTION_FAIL);
         }
       }
     } catch (Throwable e) {
@@ -125,7 +125,7 @@ public class ConnectionCompletionHandler implements CompletionHandler<Void, Conn
               if (clientAioListener != null) {
                 if (isConnected) {
                   channelContext.stat.heartbeatTimeoutCount.set(0);
-                  channelContext.setCloseCode(CloseCode.INIT_STATUS);
+                  channelContext.setCloseCode(ChannelCloseCode.INIT_STATUS);
                 }
                 clientAioListener.onAfterConnected(channelContext, isConnected, isReconnect);
               }

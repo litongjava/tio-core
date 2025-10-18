@@ -6,7 +6,7 @@ import java.util.List;
 
 import com.litongjava.aio.Packet;
 import com.litongjava.tio.core.ChannelContext;
-import com.litongjava.tio.core.ChannelContext.CloseCode;
+import com.litongjava.tio.core.ChannelCloseCode;
 import com.litongjava.tio.core.Tio;
 import com.litongjava.tio.core.TioConfig;
 import com.litongjava.tio.core.exception.AioDecodeException;
@@ -192,7 +192,7 @@ public class DecodeTask {
         } else {
           log.error(e.getMessage(), e);
         }
-        Tio.close(channelContext, e, "Decode exception:" + e.getMessage(), CloseCode.DECODE_ERROR);
+        Tio.close(channelContext, e, "Decode exception:" + e.getMessage(), ChannelCloseCode.DECODE_ERROR);
         return;
       }
     }

@@ -6,7 +6,6 @@ import java.util.List;
 import com.litongjava.aio.Packet;
 import com.litongjava.aio.PacketMeta;
 import com.litongjava.tio.consts.TioCoreConfigKeys;
-import com.litongjava.tio.core.ChannelContext.CloseCode;
 import com.litongjava.tio.core.pool.BufferPoolUtils;
 import com.litongjava.tio.core.stat.IpStat;
 import com.litongjava.tio.core.task.SendPacketTask;
@@ -114,7 +113,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, WriteC
       }
 
       if (!isSentSuccess) {
-        Tio.close(channelContext, throwable, "Write data return:" + bytesWritten, CloseCode.WRITE_COUNT_IS_NEGATIVE);
+        Tio.close(channelContext, throwable, "Write data return:" + bytesWritten, ChannelCloseCode.WRITE_COUNT_IS_NEGATIVE);
       }
     } catch (Throwable e) {
       log.error(e.toString(), e);

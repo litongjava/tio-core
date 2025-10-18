@@ -1,7 +1,7 @@
 package com.litongjava.tio.core.utils;
 
 import com.litongjava.tio.core.ChannelContext;
-import com.litongjava.tio.core.ChannelContext.CloseCode;
+import com.litongjava.tio.core.ChannelCloseCode;
 import com.litongjava.tio.core.Tio;
 
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +27,7 @@ public class TioUtils {
         if (isopen) {
           try {
             Tio.close(channelContext, "asynchronousSocketChannel is open, but channelContext isClosed: " + channelContext.isClosed + ", isRemoved: " + channelContext.isRemoved,
-                CloseCode.CHANNEL_NOT_OPEN);
+                ChannelCloseCode.CHANNEL_NOT_OPEN);
           } catch (Throwable e) {
             log.error(e.toString(), e);
           }
@@ -41,7 +41,7 @@ public class TioUtils {
 
     if (!isopen) {
       log.info("connection might close by peer,{}, isOpen:{}, isClosed:{}, isRemoved:{}", channelContext, isopen, channelContext.isClosed, channelContext.isRemoved);
-      Tio.close(channelContext, "asynchronousSocketChannel is not open, connection might close by peer", CloseCode.CHANNEL_NOT_OPEN);
+      Tio.close(channelContext, "asynchronousSocketChannel is not open, connection might close by peer", ChannelCloseCode.CHANNEL_NOT_OPEN);
       return false;
     }
     return true;

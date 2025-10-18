@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 
 import com.litongjava.enhance.buffer.VirtualBuffer;
 import com.litongjava.tio.consts.TioCoreConfigKeys;
-import com.litongjava.tio.core.ChannelContext.CloseCode;
 import com.litongjava.tio.core.pool.BufferPoolUtils;
 import com.litongjava.tio.core.stat.IpStat;
 import com.litongjava.tio.core.task.DecodeTask;
@@ -83,7 +82,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, Virtual
         } catch (Throwable e) {
           log.error("Decode error", e);
           virtualBuffer.clean();
-          Tio.close(channelContext, e, "unexpected decode error", CloseCode.DECODE_ERROR);
+          Tio.close(channelContext, e, "unexpected decode error", ChannelCloseCode.DECODE_ERROR);
           return;
         }
       } else {
@@ -94,7 +93,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, Virtual
           channelContext.sslFacadeContext.getSslFacade().decrypt(copiedByteBuffer);
         } catch (Exception e) {
           log.error(channelContext + ", " + e.toString() + copiedByteBuffer, e);
-          Tio.close(channelContext, e, e.toString(), CloseCode.SSL_DECRYPT_ERROR);
+          Tio.close(channelContext, e, e.toString(), ChannelCloseCode.SSL_DECRYPT_ERROR);
         }
       }
 
@@ -108,7 +107,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, Virtual
       String message = "The length of the read data is 0";
       log.error("close {}, because {}", channelContext, message);
       try {
-        Tio.close(channelContext, null, message, CloseCode.READ_COUNT_IS_ZERO);
+        Tio.close(channelContext, null, message, ChannelCloseCode.READ_COUNT_IS_ZERO);
       } finally {
         virtualBuffer.clean();
       }
@@ -121,7 +120,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, Virtual
           log.info("close {}, because {}", channelContext, message);
         }
         try {
-          Tio.close(channelContext, null, message, CloseCode.CLOSED_BY_PEER);
+          Tio.close(channelContext, null, message, ChannelCloseCode.CLOSED_BY_PEER);
         } finally {
           virtualBuffer.clean();
         }
@@ -130,7 +129,7 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, Virtual
         String message = "The length of the read data is less than -1";
         log.error("close {}, because {}", channelContext, message);
         try {
-          Tio.close(channelContext, null, "read result" + result, CloseCode.READ_COUNT_IS_NEGATIVE);
+          Tio.close(channelContext, null, "read result" + result, ChannelCloseCode.READ_COUNT_IS_NEGATIVE);
         } catch (Exception e) {
           virtualBuffer.clean();
         }
@@ -166,6 +165,6 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, Virtual
       } catch (Exception e) {
       }
     }
-    Tio.close(channelContext, exc, "Failed to read data: " + exc.getClass().getName(), CloseCode.READ_ERROR);
+    Tio.close(channelContext, exc, "Failed to read data: " + exc.getClass().getName(), ChannelCloseCode.READ_ERROR);
   }
 }

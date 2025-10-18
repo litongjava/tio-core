@@ -13,9 +13,8 @@ import javax.net.ssl.SSLException;
 
 import com.litongjava.aio.Packet;
 import com.litongjava.enhance.channel.EnhanceAsynchronousServerChannel;
-import com.litongjava.tio.consts.TioCoreConfigKeys;
 import com.litongjava.tio.core.ChannelContext;
-import com.litongjava.tio.core.ChannelContext.CloseCode;
+import com.litongjava.tio.core.ChannelCloseCode;
 import com.litongjava.tio.core.Tio;
 import com.litongjava.tio.core.TioConfig;
 import com.litongjava.tio.core.WriteCompletionHandler;
@@ -25,7 +24,6 @@ import com.litongjava.tio.core.ssl.SslUtils;
 import com.litongjava.tio.core.ssl.SslVo;
 import com.litongjava.tio.core.utils.TioUtils;
 import com.litongjava.tio.core.vo.WriteCompletionVo;
-import com.litongjava.tio.utils.environment.EnvUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -86,7 +84,7 @@ public class SendPacketTask {
               byteBuffer = sslVo.getByteBuffer();
             } catch (SSLException e) {
               log.error(channelContext.toString() + ", An exception occurred while performing SSL encryption", e);
-              Tio.close(channelContext, "An exception occurred during SSL encryption.", CloseCode.SSL_ENCRYPTION_ERROR);
+              Tio.close(channelContext, "An exception occurred during SSL encryption.", ChannelCloseCode.SSL_ENCRYPTION_ERROR);
               return false;
             }
           }
@@ -149,7 +147,7 @@ public class SendPacketTask {
               channelContext.sslFacadeContext.getSslFacade().encrypt(sslVo);
             } catch (SSLException e) {
               log.error("Failed to encrypt data using ssl", e);
-              Tio.close(channelContext, "Failed to encrypt data using ssl", CloseCode.SSL_ENCRYPTION_ERROR);
+              Tio.close(channelContext, "Failed to encrypt data using ssl", ChannelCloseCode.SSL_ENCRYPTION_ERROR);
               break;
             }
             ByteBuffer encrypted = sslVo.getByteBuffer();
@@ -203,7 +201,7 @@ public class SendPacketTask {
               byteBuffer = sslVo.getByteBuffer();
             } catch (SSLException e) {
               log.error(channelContext.toString() + ", An exception occurred while performing SSL encryption", e);
-              Tio.close(channelContext, "An exception occurred during SSL encryption.", CloseCode.SSL_ENCRYPTION_ERROR);
+              Tio.close(channelContext, "An exception occurred during SSL encryption.", ChannelCloseCode.SSL_ENCRYPTION_ERROR);
             }
           }
         }

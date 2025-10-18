@@ -15,7 +15,6 @@ import com.litongjava.tio.client.ClientChannelContext;
 import com.litongjava.tio.client.ClientTioConfig;
 import com.litongjava.tio.client.ReconnConf;
 import com.litongjava.tio.consts.TioCoreConfigKeys;
-import com.litongjava.tio.core.ChannelContext.CloseCode;
 import com.litongjava.tio.core.task.CloseTask;
 import com.litongjava.tio.core.task.SendPacketTask;
 import com.litongjava.tio.server.ServerTioConfig;
@@ -249,7 +248,7 @@ public class Tio {
    * @param remark
    * @param closeCode
    */
-  public static void close(ChannelContext channelContext, String remark, CloseCode closeCode) {
+  public static void close(ChannelContext channelContext, String remark, ChannelCloseCode closeCode) {
     close(channelContext, null, remark, closeCode);
   }
 
@@ -264,7 +263,7 @@ public class Tio {
     close(channelContext, throwable, remark, false);
   }
 
-  public static void close(ChannelContext channelContext, Throwable throwable, String remark, CloseCode closeCode) {
+  public static void close(ChannelContext channelContext, Throwable throwable, String remark, ChannelCloseCode closeCode) {
     close(channelContext, throwable, remark, false, closeCode);
   }
 
@@ -272,7 +271,7 @@ public class Tio {
     close(channelContext, throwable, remark, isNeedRemove, true);
   }
 
-  public static void close(ChannelContext channelContext, Throwable throwable, String remark, boolean isNeedRemove, CloseCode closeCode) {
+  public static void close(ChannelContext channelContext, Throwable throwable, String remark, boolean isNeedRemove, ChannelCloseCode closeCode) {
     close(channelContext, throwable, remark, isNeedRemove, true, closeCode);
   }
 
@@ -288,7 +287,7 @@ public class Tio {
    * @param isNeedRemove
    * @param needCloseLock
    */
-  public static void close(ChannelContext channelContext, Throwable throwable, String remark, boolean isNeedRemove, boolean needCloseLock, CloseCode closeCode) {
+  public static void close(ChannelContext channelContext, Throwable throwable, String remark, boolean isNeedRemove, boolean needCloseLock, ChannelCloseCode closeCode) {
     if (channelContext == null) {
       return;
     }
@@ -313,8 +312,8 @@ public class Tio {
     }
 
     if (closeCode == null) {
-      if (channelContext.getCloseCode() == CloseCode.INIT_STATUS) {
-        channelContext.setCloseCode(CloseCode.NO_CODE);
+      if (channelContext.getCloseCode() == ChannelCloseCode.INIT_STATUS) {
+        channelContext.setCloseCode(ChannelCloseCode.NO_CODE);
       }
     } else {
       channelContext.setCloseCode(closeCode);
@@ -390,7 +389,7 @@ public class Tio {
    * @param remark
    * @param closeCode
    */
-  public static void closeIp(TioConfig tioConfig, String ip, String remark, CloseCode closeCode) {
+  public static void closeIp(TioConfig tioConfig, String ip, String remark, ChannelCloseCode closeCode) {
     SetWithLock<ChannelContext> setWithLock = Tio.getByIp(tioConfig, ip);
     closeSet(tioConfig, setWithLock, remark, closeCode);
   }
@@ -413,7 +412,7 @@ public class Tio {
    * @param remark
    * @param closeCode
    */
-  public static void closeGroup(TioConfig tioConfig, String group, String remark, CloseCode closeCode) {
+  public static void closeGroup(TioConfig tioConfig, String group, String remark, ChannelCloseCode closeCode) {
     SetWithLock<ChannelContext> setWithLock = Tio.getByGroup(tioConfig, group);
     closeSet(tioConfig, setWithLock, remark, closeCode);
   }
@@ -436,7 +435,7 @@ public class Tio {
    * @param remark
    * @param closeCode
    */
-  public static void closeUser(TioConfig tioConfig, String userid, String remark, CloseCode closeCode) {
+  public static void closeUser(TioConfig tioConfig, String userid, String remark, ChannelCloseCode closeCode) {
     SetWithLock<ChannelContext> setWithLock = Tio.getByUserId(tioConfig, userid);
     closeSet(tioConfig, setWithLock, remark, closeCode);
   }
@@ -459,7 +458,7 @@ public class Tio {
    * @param remark
    * @param closeCode
    */
-  public static void closeToken(TioConfig tioConfig, String token, String remark, CloseCode closeCode) {
+  public static void closeToken(TioConfig tioConfig, String token, String remark, ChannelCloseCode closeCode) {
     SetWithLock<ChannelContext> setWithLock = Tio.getByToken(tioConfig, token);
     closeSet(tioConfig, setWithLock, remark, closeCode);
   }
@@ -482,7 +481,7 @@ public class Tio {
    * @param remark
    * @param removeCode
    */
-  public static void removeIp(TioConfig tioConfig, String ip, String remark, CloseCode removeCode) {
+  public static void removeIp(TioConfig tioConfig, String ip, String remark, ChannelCloseCode removeCode) {
     SetWithLock<ChannelContext> setWithLock = Tio.getByIp(tioConfig, ip);
     removeSet(tioConfig, setWithLock, remark, removeCode);
   }
@@ -505,7 +504,7 @@ public class Tio {
    * @param remark
    * @param removeCode
    */
-  public static void removeGroup(TioConfig tioConfig, String group, String remark, CloseCode removeCode) {
+  public static void removeGroup(TioConfig tioConfig, String group, String remark, ChannelCloseCode removeCode) {
     SetWithLock<ChannelContext> setWithLock = Tio.getByGroup(tioConfig, group);
     removeSet(tioConfig, setWithLock, remark, removeCode);
   }
@@ -528,7 +527,7 @@ public class Tio {
    * @param remark
    * @param removeCode
    */
-  public static void removeUser(TioConfig tioConfig, String userid, String remark, CloseCode removeCode) {
+  public static void removeUser(TioConfig tioConfig, String userid, String remark, ChannelCloseCode removeCode) {
     SetWithLock<ChannelContext> setWithLock = Tio.getByUserId(tioConfig, userid);
     removeSet(tioConfig, setWithLock, remark, removeCode);
   }
@@ -551,7 +550,7 @@ public class Tio {
    * @param remark
    * @param removeCode
    */
-  public static void removeToken(TioConfig tioConfig, String token, String remark, CloseCode removeCode) {
+  public static void removeToken(TioConfig tioConfig, String token, String remark, ChannelCloseCode removeCode) {
     SetWithLock<ChannelContext> setWithLock = Tio.getByToken(tioConfig, token);
     removeSet(tioConfig, setWithLock, remark, removeCode);
   }
@@ -564,7 +563,7 @@ public class Tio {
    * @param closeCode
    * @author tanyaowu
    */
-  public static void closeSet(TioConfig tioConfig, SetWithLock<ChannelContext> setWithLock, String remark, CloseCode closeCode) {
+  public static void closeSet(TioConfig tioConfig, SetWithLock<ChannelContext> setWithLock, String remark, ChannelCloseCode closeCode) {
     if (setWithLock != null) {
       setWithLock.handle(new ReadLockHandler<Set<ChannelContext>>() {
         @Override
@@ -585,7 +584,7 @@ public class Tio {
    * @param closeCode
    * @author tanyaowu
    */
-  public static void removeSet(TioConfig tioConfig, SetWithLock<ChannelContext> setWithLock, String remark, CloseCode closeCode) {
+  public static void removeSet(TioConfig tioConfig, SetWithLock<ChannelContext> setWithLock, String remark, ChannelCloseCode closeCode) {
     if (setWithLock != null) {
       setWithLock.handle(new ReadLockHandler<Set<ChannelContext>>() {
         @Override
@@ -921,7 +920,7 @@ public class Tio {
    * @param remark
    * @param closeCode
    */
-  public static void remove(ChannelContext channelContext, String remark, CloseCode closeCode) {
+  public static void remove(ChannelContext channelContext, String remark, ChannelCloseCode closeCode) {
     remove(channelContext, null, remark, closeCode);
   }
 
@@ -932,7 +931,7 @@ public class Tio {
    * @param remark
    */
   public static void remove(ChannelContext channelContext, Throwable throwable, String remark) {
-    remove(channelContext, throwable, remark, (CloseCode) null);
+    remove(channelContext, throwable, remark, (ChannelCloseCode) null);
   }
 
   /**
@@ -942,7 +941,7 @@ public class Tio {
    * @param remark
    * @param closeCode
    */
-  public static void remove(ChannelContext channelContext, Throwable throwable, String remark, CloseCode closeCode) {
+  public static void remove(ChannelContext channelContext, Throwable throwable, String remark, ChannelCloseCode closeCode) {
     close(channelContext, throwable, remark, true, closeCode);
   }
 
@@ -955,7 +954,7 @@ public class Tio {
    * @param remark
    */
   public static void remove(TioConfig tioConfig, String clientIp, Integer clientPort, Throwable throwable, String remark) {
-    remove(tioConfig, clientIp, clientPort, throwable, remark, (CloseCode) null);
+    remove(tioConfig, clientIp, clientPort, throwable, remark, (ChannelCloseCode) null);
   }
 
   /**
@@ -967,7 +966,7 @@ public class Tio {
    * @param remark
    * @param closeCode
    */
-  public static void remove(TioConfig tioConfig, String clientIp, Integer clientPort, Throwable throwable, String remark, CloseCode closeCode) {
+  public static void remove(TioConfig tioConfig, String clientIp, Integer clientPort, Throwable throwable, String remark, ChannelCloseCode closeCode) {
     ChannelContext channelContext = tioConfig.clientNodes.find(clientIp, clientPort);
     remove(channelContext, throwable, remark, closeCode);
   }
@@ -979,7 +978,7 @@ public class Tio {
    * @param remark
    */
   public static void remove(ServerTioConfig serverTioConfig, String ip, String remark) {
-    remove(serverTioConfig, ip, remark, (CloseCode) null);
+    remove(serverTioConfig, ip, remark, (ChannelCloseCode) null);
   }
 
   /**
@@ -989,7 +988,7 @@ public class Tio {
    * @param remark
    * @param closeCode
    */
-  public static void remove(ServerTioConfig serverTioConfig, String ip, String remark, CloseCode closeCode) {
+  public static void remove(ServerTioConfig serverTioConfig, String ip, String remark, ChannelCloseCode closeCode) {
     SetWithLock<ChannelContext> setWithLock = serverTioConfig.ips.clients(serverTioConfig, ip);
     if (setWithLock == null) {
       return;

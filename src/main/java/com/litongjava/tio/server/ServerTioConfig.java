@@ -12,7 +12,7 @@ import com.litongjava.enhance.buffer.GlobalScheduler;
 import com.litongjava.model.sys.SysConst;
 import com.litongjava.tio.consts.TioCoreConfigKeys;
 import com.litongjava.tio.core.ChannelContext;
-import com.litongjava.tio.core.ChannelContext.CloseCode;
+import com.litongjava.tio.core.ChannelCloseCode;
 import com.litongjava.tio.core.Tio;
 import com.litongjava.tio.core.TioConfig;
 import com.litongjava.tio.core.intf.AioHandler;
@@ -237,7 +237,7 @@ public class ServerTioConfig extends TioConfig {
                 if (!ServerTioConfig.this.serverAioListener.onHeartbeatTimeout(channelContext, interval,
                     channelContext.stat.heartbeatTimeoutCount.incrementAndGet())) {
                   log.info("{}, {} ms or not send and receive message", channelContext, interval);
-                  channelContext.setCloseCode(CloseCode.HEARTBEAT_TIMEOUT);
+                  channelContext.setCloseCode(ChannelCloseCode.HEARTBEAT_TIMEOUT);
                   Tio.remove(channelContext, interval + " ms not send and receive message");
                 }
               }

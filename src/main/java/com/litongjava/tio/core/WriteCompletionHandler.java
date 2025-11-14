@@ -21,8 +21,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class WriteCompletionHandler implements CompletionHandler<Integer, WriteCompletionVo> {
-  private final static boolean DIAGNOSTIC_LOG_ENABLED = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_DIAGNOSTIC,
-      false);
+  private final static boolean DIAGNOSTIC_LOG_ENABLED = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_DIAGNOSTIC, false);
   private ChannelContext channelContext = null;
   // public final ReentrantLock lock = new ReentrantLock();
   // public final Condition condition = lock.newCondition();
@@ -38,6 +37,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, WriteC
     }
 
     if (bytesWritten > 0) {
+      writeCompletionVo.setTotalWritten(writeCompletionVo.getTotalWritten() + bytesWritten);
       channelContext.stat.latestTimeOfSentByte = SystemTimer.currTime;
     }
 
@@ -45,7 +45,7 @@ public class WriteCompletionHandler implements CompletionHandler<Integer, WriteC
       channelContext.asynchronousSocketChannel.write(writeCompletionVo.getByteBuffer(), writeCompletionVo, this);
 
     } else {
-      handle(bytesWritten, null, writeCompletionVo);
+      handle(writeCompletionVo.getTotalWritten(), null, writeCompletionVo);
 
       BufferPoolUtils.clean(writeCompletionVo.getByteBuffer());
 

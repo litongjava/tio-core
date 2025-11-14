@@ -12,9 +12,9 @@ import java.util.concurrent.locks.LockSupport;
 import javax.net.ssl.SSLException;
 
 import com.litongjava.aio.Packet;
-import com.litongjava.enhance.channel.EnhanceAsynchronousServerChannel;
-import com.litongjava.tio.core.ChannelContext;
+import com.litongjava.enhance.channel.EnhanceAsynchronousSocketChannel;
 import com.litongjava.tio.core.ChannelCloseCode;
+import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.Tio;
 import com.litongjava.tio.core.TioConfig;
 import com.litongjava.tio.core.WriteCompletionHandler;
@@ -92,7 +92,7 @@ public class SendPacketTask {
 
         AsynchronousSocketChannel asc = channelContext.asynchronousSocketChannel;
         File fileBody = packet.getFileBody();
-        if (fileBody != null && asc instanceof EnhanceAsynchronousServerChannel) {
+        if (fileBody != null && asc instanceof EnhanceAsynchronousSocketChannel) {
           boolean keepConnection = nextPacket.isKeepConnection();
           // send header
           nextPacket.setKeepConnection(true);
@@ -115,31 +115,51 @@ public class SendPacketTask {
   }
 
   private void transfer(File fileBody, Packet nextPacket, AsynchronousSocketChannel asc) {
-    SocketChannel sc = ((EnhanceAsynchronousServerChannel) asc).getSocketChannel();
+    SocketChannel sc = ((EnhanceAsynchronousSocketChannel) asc).getSocketChannel();
     if (!isSsl) {
-      // —— 零拷贝 ——（不需要 buffer 池）
+      // —— 零拷贝：加退避，避免死循环打满 CPU ——
       try (FileChannel fc = FileChannel.open(fileBody.toPath(), StandardOpenOption.READ)) {
         long pos = 0, size = fc.size();
-        while (pos < size) {
+
+        // 自旋次数 + 指数退避
+        int idleRounds = 0;
+        final int MAX_SPIN = 16; // 前几轮稍微积极一点
+        long backoffNanos = 1_000L; // 初始 1 微秒
+        final long MAX_BACKOFF_NANOS = 1_000_000L; // 最大退避到 1 毫秒
+
+        while (pos < size && TioUtils.checkBeforeIO(channelContext)) {
           long sent = fc.transferTo(pos, size - pos, sc);
           if (sent > 0) {
             pos += sent;
+            // 一旦写出成功，重置退避状态
+            idleRounds = 0;
+            backoffNanos = 1_000L;
           } else {
-            LockSupport.parkNanos(1_000);
+            // 写不动：说明内核缓冲区满了或对端太慢
+            idleRounds++;
+            if (idleRounds <= MAX_SPIN) {
+              // 前几次：短暂退避 + 指数退避，兼顾吞吐和延迟
+              LockSupport.parkNanos(backoffNanos);
+              backoffNanos = Math.min(backoffNanos << 1, MAX_BACKOFF_NANOS);
+            } else {
+              // 再不行就稳定按最大退避，防止占死一个 CPU 核
+              LockSupport.parkNanos(MAX_BACKOFF_NANOS);
+            }
           }
         }
       } catch (IOException e) {
-        e.printStackTrace();
+        log.error("zero-copy transfer file error, channel: {}", channelContext, e);
       }
     } else {
-      // —— SSL：分块读 + 加密 + 写出 ——（改：分配→池借；用完归还）
+      // —— SSL 分支暂时保持原样（下方可以再一起优化） ——
       try (FileChannel fc = FileChannel.open(fileBody.toPath(), StandardOpenOption.READ)) {
         ByteBuffer buf = BufferPoolUtils.allocate(TioConfig.WRITE_CHUNK_SIZE, 64 * 1024);
         try {
           int readBytes;
           while ((readBytes = fc.read(buf)) != -1) {
-            if (readBytes == 0)
+            if (readBytes == 0) {
               continue;
+            }
             buf.flip();
 
             SslVo sslVo = new SslVo(buf, nextPacket);
@@ -151,7 +171,7 @@ public class SendPacketTask {
               break;
             }
             ByteBuffer encrypted = sslVo.getByteBuffer();
-            // 同步写出
+            // 同步写出（这里之后也可以用类似退避逻辑再优化）
             while (encrypted.hasRemaining()) {
               sc.write(encrypted);
             }
@@ -161,7 +181,7 @@ public class SendPacketTask {
           BufferPoolUtils.clean(buf);
         }
       } catch (IOException e1) {
-        e1.printStackTrace();
+        log.error("ssl file transfer error, channel: {}", channelContext, e1);
       }
     }
   }

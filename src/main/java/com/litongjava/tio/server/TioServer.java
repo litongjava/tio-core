@@ -103,16 +103,16 @@ public class TioServer {
         }
       };
 
-      TioThreadPoolExecutor tioThreadPoolExecutor = new TioThreadPoolExecutor(workerThreads, workerThreads, 0L,
-          TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(workerThreads), threadFactory);
+      TioThreadPoolExecutor tioThreadPoolExecutor = new TioThreadPoolExecutor(workerThreads, workerThreads, 0L, TimeUnit.MILLISECONDS,
+          new ArrayBlockingQueue<>(workerThreads), threadFactory);
 
       TioServerExecutorService.tioThreadPoolExecutor = tioThreadPoolExecutor;
       EnhanceAsynchronousChannelProvider provider = new EnhanceAsynchronousChannelProvider(false);
       AsynchronousChannelGroup group = provider.openAsynchronousChannelGroup(tioThreadPoolExecutor, workerThreads);
 
       // 使用提供者创建服务器通道
-      serverSocketChannel = (EnhanceAsynchronousServerSocketChannel) provider
-          .openAsynchronousServerSocketChannel(group);
+      AsynchronousServerSocketChannel openAsynchronousServerSocketChannel = provider.openAsynchronousServerSocketChannel(group);
+      serverSocketChannel = (EnhanceAsynchronousServerSocketChannel) openAsynchronousServerSocketChannel;
     }
 
     serverSocketChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);

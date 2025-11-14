@@ -8,6 +8,7 @@ import lombok.Data;
 public class WriteCompletionVo {
   private ByteBuffer byteBuffer;
   private Object obj;
+  private Integer totalWritten;
 
   public WriteCompletionVo(ByteBuffer byteBuffer, Object obj) {
     this.byteBuffer = byteBuffer;

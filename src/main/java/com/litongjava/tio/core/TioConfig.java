@@ -4,6 +4,7 @@ import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.litongjava.aio.AioId;
@@ -53,13 +54,14 @@ public abstract class TioConfig extends MapWithLockPropSupport {
   public static final int WRITE_CHUNK_SIZE = EnvUtils.getInt(TioCoreConfigKeys.TIO_DEFAULT_WRITE_CHUNK_SIZE, 8192);
   /** 是否使用直接内存缓冲区（可通过环境变量开关） */
   public static final boolean direct = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_BUFFER_DIRECT, true);
-  
+
   public static boolean disgnostic = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_DIAGNOSTIC);
   public static boolean printStats = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_STATS_PRINT);
 
-  private int workerThreads = EnvUtils.getInt(TioCoreConfigKeys.TIO_CORE_THREADS,
-      Runtime.getRuntime().availableProcessors() * 4);
-  
+  private int workerThreads = EnvUtils.getInt(TioCoreConfigKeys.TIO_CORE_THREADS, Runtime.getRuntime().availableProcessors() * 4);
+
+  private ThreadFactory threadFactory;
+
   /**
    * 本jvm中所有的ServerTioConfig对象
    */
@@ -342,11 +344,18 @@ public abstract class TioConfig extends MapWithLockPropSupport {
     this.workerThreads = workerThreads;
   }
 
+  public ThreadFactory getThreadFactory() {
+    return threadFactory;
+  }
+
+  public void setThreadFactory(ThreadFactory threadFactory) {
+    this.threadFactory = threadFactory;
+  }
+
   @SuppressWarnings({ "rawtypes", "unchecked" })
   public void setDefaultIpRemovalListenerWrapper() {
     this.ipRemovalListenerWrapper = new RemovalListenerWrapper();
-    IpStatMapCacheRemovalListener ipStatMapCacheRemovalListener = new IpStatMapCacheRemovalListener(this,
-        ipStatListener);
+    IpStatMapCacheRemovalListener ipStatMapCacheRemovalListener = new IpStatMapCacheRemovalListener(this, ipStatListener);
     ipRemovalListenerWrapper.setListener(ipStatMapCacheRemovalListener);
   }
 

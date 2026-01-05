@@ -11,8 +11,8 @@ import com.litongjava.enhance.buffer.BufferMomeryInfo;
 import com.litongjava.enhance.buffer.GlobalScheduler;
 import com.litongjava.model.sys.SysConst;
 import com.litongjava.tio.consts.TioCoreConfigKeys;
-import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.ChannelCloseCode;
+import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.Tio;
 import com.litongjava.tio.core.TioConfig;
 import com.litongjava.tio.core.intf.AioHandler;
@@ -74,8 +74,7 @@ public class ServerTioConfig extends TioConfig {
    * @throws Exception
    * @author tanyaowu
    */
-  public void useSsl(InputStream keyStoreInputStream, InputStream trustStoreInputStream, String passwd)
-      throws Exception {
+  public void useSsl(InputStream keyStoreInputStream, InputStream trustStoreInputStream, String passwd) throws Exception {
     SslConfig sslConfig = SslConfig.forServer(keyStoreInputStream, trustStoreInputStream, passwd);
     this.setSslConfig(sslConfig);
   }
@@ -221,8 +220,7 @@ public class ServerTioConfig extends TioConfig {
             set = setWithLock.getObj();
 
             for (ChannelContext channelContext : set) {
-              long compareTime = Math.max(channelContext.stat.latestTimeOfReceivedByte,
-                  channelContext.stat.latestTimeOfSentPacket);
+              long compareTime = Math.max(channelContext.stat.latestTimeOfReceivedByte, channelContext.stat.latestTimeOfSentPacket);
               long currtime = SystemTimer.currTime;
               long interval = currtime - compareTime;
 
@@ -300,8 +298,7 @@ public class ServerTioConfig extends TioConfig {
 
     builder.append("\r\n └ Blacklisted IPs");
     if (this.ipBlacklist != null) {
-      builder.append("\r\n   \t └ ")
-          .append(AppendJsonConverter.convertCollectionStringToJson(this.ipBlacklist.getAll()));
+      builder.append("\r\n   \t └ ").append(AppendJsonConverter.convertCollectionStringToJson(this.ipBlacklist.getAll()));
     }
 
     builder.append("\r\n └ Requests Being Processed: ")
@@ -344,19 +341,18 @@ public class ServerTioConfig extends TioConfig {
       int active = stats.getActiveCount();
 
       builder.append("\r\n ├ Thread Pool Statistics");
-      builder.append("\r\n │ \t ├ Pool Size / Active / Largest : ").append(poolSize).append(" / ").append(active)
-          .append(" / ").append(stats.getLargestPoolSize());
+      builder.append("\r\n │ \t ├ Pool Size / Active / Largest : ").append(poolSize).append(" / ").append(active).append(" / ")
+          .append(stats.getLargestPoolSize());
       builder.append("\r\n │ \t ├ Completed Task Count        : ").append(stats.getCompletedTaskCount());
       builder.append("\r\n │ \t ├ Queue Size                  : ").append(stats.getQueueSize());
-      builder.append("\r\n │ \t ├ Shutdown / Terminated       : ").append(stats.isShutdown()).append(" / ")
-          .append(stats.isTerminated());
+      builder.append("\r\n │ \t ├ Shutdown / Terminated       : ").append(stats.isShutdown()).append(" / ").append(stats.isTerminated());
 
-      builder.append("\r\n │ \t ├ Submitted / Started / Completed / Failed / Rejected : ").append(stats.getSubmitted())
-          .append(" / ").append(stats.getStarted()).append(" / ").append(stats.getCompleted()).append(" / ")
-          .append(stats.getFailed()).append(" / ").append(stats.getRejected());
+      builder.append("\r\n │ \t ├ Submitted / Started / Completed / Failed / Rejected : ").append(stats.getSubmitted()).append(" / ")
+          .append(stats.getStarted()).append(" / ").append(stats.getCompleted()).append(" / ").append(stats.getFailed()).append(" / ")
+          .append(stats.getRejected());
 
-      builder.append("\r\n │ \t └ AvgQueueMs / AvgExecMs / MaxExecMs : ").append(formatMs(stats.getAvgQueueMs()))
-          .append(" / ").append(formatMs(stats.getAvgExecMs())).append(" / ").append(formatMs(stats.getMaxExecMs()));
+      builder.append("\r\n │ \t └ AvgQueueMs / AvgExecMs / MaxExecMs : ").append(formatMs(stats.getAvgQueueMs())).append(" / ")
+          .append(formatMs(stats.getAvgExecMs())).append(" / ").append(formatMs(stats.getMaxExecMs()));
     }
 
     log.info(builder.toString());
@@ -367,8 +363,8 @@ public class ServerTioConfig extends TioConfig {
   }
 
   private String formatStat(BufferMemoryStat stat) {
-    return String.format("size=%d, newAlloc=%d, cleanCount=%d, reuseHit=%d", stat.bufferSize, stat.statNewAlloc,
-        stat.statCleanCount, stat.statReuseHit);
+    return String.format("size=%d, newAlloc=%d, cleanCount=%d, reuseHit=%d", stat.bufferSize, stat.statNewAlloc, stat.statCleanCount,
+        stat.statReuseHit);
   }
 
 }

@@ -94,14 +94,11 @@ public class TioServer {
       // serverSocketChannel = AsynchronousServerSocketChannel.open();
       int workerThreads = serverTioConfig.getWorkerThreads();
       log.info("{} worker threads:{}", serverTioConfig.getName(), workerThreads);
-      AtomicInteger threadNumber = new AtomicInteger(1);
-
-      ThreadFactory threadFactory = new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-          return new Thread(r, "t-io-" + threadNumber.getAndIncrement());
-        }
-      };
+      ThreadFactory threadFactory = serverTioConfig.getThreadFactory();
+      if (threadFactory == null) {
+        AtomicInteger threadNumber = new AtomicInteger(1);
+        threadFactory = r -> new Thread(r, "t-io-" + threadNumber.getAndIncrement());
+      }
 
       TioThreadPoolExecutor tioThreadPoolExecutor = new TioThreadPoolExecutor(workerThreads, workerThreads, 0L, TimeUnit.MILLISECONDS,
           new ArrayBlockingQueue<>(workerThreads), threadFactory);

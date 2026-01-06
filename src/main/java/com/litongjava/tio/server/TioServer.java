@@ -8,6 +8,7 @@ import java.nio.channels.AsynchronousServerSocketChannel;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -94,21 +95,27 @@ public class TioServer {
       // serverSocketChannel = AsynchronousServerSocketChannel.open();
       int workerThreads = serverTioConfig.getWorkerThreads();
       log.info("{} worker threads:{}", serverTioConfig.getName(), workerThreads);
-      ThreadFactory threadFactory = serverTioConfig.getThreadFactory();
+      ThreadFactory threadFactory = serverTioConfig.getWorkThreadFactory();
       if (threadFactory == null) {
         AtomicInteger threadNumber = new AtomicInteger(1);
         threadFactory = r -> new Thread(r, "t-io-" + threadNumber.getAndIncrement());
       }
 
-      TioThreadPoolExecutor tioThreadPoolExecutor = new TioThreadPoolExecutor(workerThreads, workerThreads, 0L, TimeUnit.MILLISECONDS,
-          new ArrayBlockingQueue<>(workerThreads), threadFactory);
+      ExecutorService bizExecutor = serverTioConfig.getBizExecutor();
+      if (bizExecutor == null) {
+        initBizExecutor();
+      }
+
+      TioThreadPoolExecutor tioThreadPoolExecutor = new TioThreadPoolExecutor(workerThreads, workerThreads, 0L,
+          TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(workerThreads), threadFactory);
 
       TioServerExecutorService.tioThreadPoolExecutor = tioThreadPoolExecutor;
       EnhanceAsynchronousChannelProvider provider = new EnhanceAsynchronousChannelProvider(false);
       AsynchronousChannelGroup group = provider.openAsynchronousChannelGroup(tioThreadPoolExecutor, workerThreads);
 
       // 使用提供者创建服务器通道
-      AsynchronousServerSocketChannel openAsynchronousServerSocketChannel = provider.openAsynchronousServerSocketChannel(group);
+      AsynchronousServerSocketChannel openAsynchronousServerSocketChannel = provider
+          .openAsynchronousServerSocketChannel(group);
       serverSocketChannel = (EnhanceAsynchronousServerSocketChannel) openAsynchronousServerSocketChannel;
     }
 
@@ -130,6 +137,29 @@ public class TioServer {
 
     serverTioConfig.startTime = System.currentTimeMillis();
     Threads.getTioExecutor();
+  }
+
+  private void initBizExecutor() {
+    int cpu = Runtime.getRuntime().availableProcessors();
+    int bizThreads = cpu * 8;
+    int bizQueueSize = 50_000;
+
+    ThreadFactory bizTf = new ThreadFactory() {
+      final AtomicInteger n = new AtomicInteger(1);
+
+      @Override
+      public Thread newThread(Runnable r) {
+        Thread t = new Thread(r, "t-biz-" + n.getAndIncrement());
+        t.setDaemon(true);
+        return t;
+      }
+    };
+
+    ThreadPoolExecutor biz = new ThreadPoolExecutor(bizThreads, bizThreads, 60L, TimeUnit.SECONDS,
+        //
+        new ArrayBlockingQueue<Runnable>(bizQueueSize), bizTf, new ThreadPoolExecutor.CallerRunsPolicy());
+
+    serverTioConfig.setBizExecutor(biz);
   }
 
   /**

@@ -3,10 +3,11 @@ package com.litongjava.tio.core.task;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 import com.litongjava.aio.Packet;
-import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.ChannelCloseCode;
+import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.Tio;
 import com.litongjava.tio.core.TioConfig;
 import com.litongjava.tio.core.exception.AioDecodeException;
@@ -144,15 +145,29 @@ public class DecodeTask {
             log.debug("{}, Unpacking to get a packet:{}", channelContext, packet.logstr());
           }
 
-          try {
-            new HandlePacketTask().handle(channelContext, packet);
-          } catch (TioHandlePacketException e) {
-            byteBuffer.mark();
-            String request = StandardCharsets.UTF_8.decode(byteBuffer).toString();
-            byteBuffer.reset();
-            log.error("Failed to handle request:{},packet:{},byteBuffer:{}", request, packet, byteBuffer, e);
+          ExecutorService biz = tioConfig.getBizExecutor();
+          if (biz != null) {
+            final Packet p = packet;
+            biz.execute(new Runnable() {
+              @Override
+              public void run() {
+                try {
+                  new HandlePacketTask().handle(channelContext, p);
+                } catch (Throwable e) {
+                  log.error("HandlePacketTask error, {}", channelContext, e);
+                }
+              }
+            });
+          } else {
+            try {
+              new HandlePacketTask().handle(channelContext, packet);
+            } catch (TioHandlePacketException e) {
+              byteBuffer.mark();
+              String request = StandardCharsets.UTF_8.decode(byteBuffer).toString();
+              byteBuffer.reset();
+              log.error("Failed to handle request:{},packet:{},byteBuffer:{}", request, packet, byteBuffer, e);
+            }
           }
-
           if (byteBuffer.hasRemaining()) {
             // 组包后，还剩有数据
             if (log.isDebugEnabled()) {

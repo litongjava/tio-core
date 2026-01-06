@@ -4,6 +4,7 @@ import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -60,7 +61,8 @@ public abstract class TioConfig extends MapWithLockPropSupport {
 
   private int workerThreads = EnvUtils.getInt(TioCoreConfigKeys.TIO_CORE_THREADS, Runtime.getRuntime().availableProcessors() * 4);
 
-  private ThreadFactory threadFactory;
+  private ThreadFactory workThreadFactory;
+  private ExecutorService bizExecutor;
 
   /**
    * 本jvm中所有的ServerTioConfig对象
@@ -344,18 +346,27 @@ public abstract class TioConfig extends MapWithLockPropSupport {
     this.workerThreads = workerThreads;
   }
 
-  public ThreadFactory getThreadFactory() {
-    return threadFactory;
+  public ThreadFactory getWorkThreadFactory() {
+    return workThreadFactory;
   }
 
-  public void setThreadFactory(ThreadFactory threadFactory) {
-    this.threadFactory = threadFactory;
+  public void setWorkThreadFactory(ThreadFactory threadFactory) {
+    this.workThreadFactory = threadFactory;
+  }
+
+  public java.util.concurrent.ExecutorService getBizExecutor() {
+    return bizExecutor;
+  }
+
+  public void setBizExecutor(java.util.concurrent.ExecutorService e) {
+    this.bizExecutor = e;
   }
 
   @SuppressWarnings({ "rawtypes", "unchecked" })
   public void setDefaultIpRemovalListenerWrapper() {
     this.ipRemovalListenerWrapper = new RemovalListenerWrapper();
-    IpStatMapCacheRemovalListener ipStatMapCacheRemovalListener = new IpStatMapCacheRemovalListener(this, ipStatListener);
+    IpStatMapCacheRemovalListener ipStatMapCacheRemovalListener = new IpStatMapCacheRemovalListener(this,
+        ipStatListener);
     ipRemovalListenerWrapper.setListener(ipStatMapCacheRemovalListener);
   }
 

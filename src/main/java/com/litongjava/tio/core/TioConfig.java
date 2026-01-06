@@ -59,7 +59,8 @@ public abstract class TioConfig extends MapWithLockPropSupport {
   public static boolean disgnostic = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_DIAGNOSTIC);
   public static boolean printStats = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_STATS_PRINT);
 
-  private int workerThreads = EnvUtils.getInt(TioCoreConfigKeys.TIO_CORE_THREADS, Runtime.getRuntime().availableProcessors() * 4);
+  private int workerThreads = EnvUtils.getInt(TioCoreConfigKeys.TIO_CORE_THREADS,
+      Runtime.getRuntime().availableProcessors());
 
   private ThreadFactory workThreadFactory;
   private ExecutorService bizExecutor;

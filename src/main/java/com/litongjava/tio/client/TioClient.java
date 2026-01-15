@@ -101,32 +101,25 @@ public class TioClient {
   }
 
   /**
-   *
    * @param serverNode
    * @return
    * @throws Exception
-   *
-   * @author tanyaowu
-   *
    */
   public ClientChannelContext connect(Node serverNode) throws Exception {
     return connect(serverNode, null);
   }
 
   /**
-   *
    * @param serverNode
    * @param timeout
    * @return
    * @throws Exception
-   * @author tanyaowu
    */
   public ClientChannelContext connect(Node serverNode, Integer timeout) throws Exception {
     return connect(serverNode, null, 0, timeout);
   }
 
   /**
-   *
    * @param serverNode
    * @param bindIp
    * @param bindPort
@@ -134,14 +127,16 @@ public class TioClient {
    * @param timeout                  超时时间，单位秒
    * @return
    * @throws Exception
-   * @author tanyaowu
    */
-  public ClientChannelContext connect(Node serverNode, String bindIp, Integer bindPort, ClientChannelContext initClientChannelContext, Integer timeout) throws Exception {
+  public ClientChannelContext connect(Node serverNode, String bindIp, Integer bindPort,
+      ClientChannelContext initClientChannelContext, Integer timeout) throws Exception {
     return connect(serverNode, bindIp, bindPort, initClientChannelContext, timeout, true);
   }
 
+  
+
+  
   /**
-   *
    * @param serverNode
    * @param bindIp
    * @param bindPort
@@ -150,9 +145,9 @@ public class TioClient {
    * @param isSyn                    true: 同步, false: 异步
    * @return
    * @throws Exception
-   * @author tanyaowu
    */
-  private ClientChannelContext connect(Node serverNode, String bindIp, Integer bindPort, ClientChannelContext initClientChannelContext, Integer timeout, boolean isSyn) throws Exception {
+  private ClientChannelContext connect(Node serverNode, String bindIp, Integer bindPort,
+      ClientChannelContext initClientChannelContext, Integer timeout, boolean isSyn) throws Exception {
 
     AsynchronousSocketChannel asynchronousSocketChannel = null;
     ClientChannelContext channelContext = null;
@@ -169,7 +164,7 @@ public class TioClient {
     long end = SystemTimer.currTime;
     long iv = end - start;
     if (iv >= 100) {
-      log.error("{}, open 耗时:{} ms", channelContext, iv);
+      log.error("{}, open elapsed:{} ms", channelContext, iv);
     }
 
     asynchronousSocketChannel.setOption(StandardSocketOptions.TCP_NODELAY, true);
@@ -195,7 +190,8 @@ public class TioClient {
 
     InetSocketAddress inetSocketAddress = new InetSocketAddress(serverNode.getIp(), serverNode.getPort());
 
-    ConnectionCompletionVo attachment = new ConnectionCompletionVo(channelContext, this, isReconnect, asynchronousSocketChannel, serverNode, bindIp, bindPort);
+    ConnectionCompletionVo attachment = new ConnectionCompletionVo(channelContext, this, isReconnect,
+        asynchronousSocketChannel, serverNode, bindIp, bindPort);
 
     if (isSyn) {
       Integer realTimeout = timeout;
@@ -205,7 +201,8 @@ public class TioClient {
 
       CountDownLatch countDownLatch = new CountDownLatch(1);
       attachment.setCountDownLatch(countDownLatch);
-      asynchronousSocketChannel.connect(inetSocketAddress, attachment, clientTioConfig.getConnectionCompletionHandler());
+      asynchronousSocketChannel.connect(inetSocketAddress, attachment,
+          clientTioConfig.getConnectionCompletionHandler());
       boolean f = countDownLatch.await(realTimeout, TimeUnit.SECONDS);
       if (f) {
         return attachment.getChannelContext();
@@ -214,7 +211,8 @@ public class TioClient {
         return attachment.getChannelContext();
       }
     } else {
-      asynchronousSocketChannel.connect(inetSocketAddress, attachment, clientTioConfig.getConnectionCompletionHandler());
+      asynchronousSocketChannel.connect(inetSocketAddress, attachment,
+          clientTioConfig.getConnectionCompletionHandler());
       return null;
     }
   }
@@ -231,7 +229,8 @@ public class TioClient {
    * @author tanyaowu
    *
    */
-  public ClientChannelContext connect(Node serverNode, String bindIp, Integer bindPort, Integer timeout) throws Exception {
+  public ClientChannelContext connect(Node serverNode, String bindIp, Integer bindPort, Integer timeout)
+      throws Exception {
     return connect(serverNode, bindIp, bindPort, null, timeout);
   }
 
@@ -260,7 +259,8 @@ public class TioClient {
    *
    */
   public void reconnect(ClientChannelContext channelContext, Integer timeout) throws Exception {
-    connect(channelContext.getServerNode(), channelContext.getBindIp(), channelContext.getBindPort(), channelContext, timeout);
+    connect(channelContext.getServerNode(), channelContext.getBindIp(), channelContext.getBindPort(), channelContext,
+        timeout);
   }
 
   /**
@@ -287,7 +287,8 @@ public class TioClient {
         while (!clientTioConfig.isStopped()) {
           // final long heartbeatTimeout = clientTioConfig.heartbeatTimeout;
           if (clientTioConfig.heartbeatTimeout <= 0) {
-            log.warn("The user has cancelled the heartbeat sending function at the frame level, and asks the user to complete the heartbeat mechanism by himsel");
+            log.warn(
+                "The user has cancelled the heartbeat sending function at the frame level, and asks the user to complete the heartbeat mechanism by himsel");
             break;
           }
           SetWithLock<ChannelContext> setWithLock = clientTioConfig.connecteds;
@@ -316,8 +317,10 @@ public class TioClient {
               }
             }
             if (log.isInfoEnabled()) {
-              log.info("[{}]: curr:{}, closed:{}, received:({}p)({}b), handled:{}, sent:({}p)({}b)", id, set.size(), clientGroupStat.closed.get(), clientGroupStat.receivedPackets.get(),
-                  clientGroupStat.receivedBytes.get(), clientGroupStat.handledPackets.get(), clientGroupStat.sentPackets.get(), clientGroupStat.sentBytes.get());
+              log.info("[{}]: curr:{}, closed:{}, received:({}p)({}b), handled:{}, sent:({}p)({}b)", id, set.size(),
+                  clientGroupStat.closed.get(), clientGroupStat.receivedPackets.get(),
+                  clientGroupStat.receivedBytes.get(), clientGroupStat.handledPackets.get(),
+                  clientGroupStat.sentPackets.get(), clientGroupStat.sentBytes.get());
             }
 
           } catch (Throwable e) {

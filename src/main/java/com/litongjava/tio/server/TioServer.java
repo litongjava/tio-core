@@ -8,7 +8,6 @@ import java.nio.channels.AsynchronousServerSocketChannel;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -101,11 +100,6 @@ public class TioServer {
         threadFactory = r -> new Thread(r, "t-io-" + threadNumber.getAndIncrement());
       }
 
-      ExecutorService bizExecutor = serverTioConfig.getBizExecutor();
-      if (bizExecutor == null) {
-        initBizExecutor();
-      }
-
       TioThreadPoolExecutor tioThreadPoolExecutor = new TioThreadPoolExecutor(workerThreads, workerThreads, 0L,
           TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(workerThreads), threadFactory);
 
@@ -137,29 +131,6 @@ public class TioServer {
 
     serverTioConfig.startTime = System.currentTimeMillis();
     Threads.getTioExecutor();
-  }
-
-  private void initBizExecutor() {
-    int cpu = Runtime.getRuntime().availableProcessors();
-    int bizThreads = cpu * 8;
-    int bizQueueSize = 50_000;
-
-    ThreadFactory bizTf = new ThreadFactory() {
-      final AtomicInteger n = new AtomicInteger(1);
-
-      @Override
-      public Thread newThread(Runnable r) {
-        Thread t = new Thread(r, "t-biz-" + n.getAndIncrement());
-        t.setDaemon(true);
-        return t;
-      }
-    };
-
-    ThreadPoolExecutor biz = new ThreadPoolExecutor(bizThreads, bizThreads, 60L, TimeUnit.SECONDS,
-        //
-        new ArrayBlockingQueue<Runnable>(bizQueueSize), bizTf, new ThreadPoolExecutor.CallerRunsPolicy());
-
-    serverTioConfig.setBizExecutor(biz);
   }
 
   /**

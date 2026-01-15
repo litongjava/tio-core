@@ -24,7 +24,6 @@ import com.litongjava.tio.utils.prop.MapWithLockPropSupport;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- *
  * @author tanyaowu 2017年10月19日 上午9:39:46
  */
 @Slf4j
@@ -36,12 +35,12 @@ public abstract class ChannelContext extends MapWithLockPropSupport {
 
   public boolean isBind = false;
   /**
-   * 解码出现异常时，是否打印异常日志 此值默认与org.tio.core.TioConfig.logWhenDecodeError保持一致
+   * 解码出现异常时，是否打印异常日志 此值默认与TioConfig.logWhenDecodeError保持一致
    */
   public boolean logWhenDecodeError = false;
   /**
-   * 此值不设时，心跳时间取org.tio.core.TioConfig.heartbeatTimeout
-   * 当然这个值如果小于org.tio.core.TioConfig.heartbeatTimeout，定时检查的时间间隔还是以org.tio.core.TioConfig.heartbeatTimeout为准，只是在判断时用此值
+   * 此值不设时，心跳时间取TioConfig.heartbeatTimeout
+   * 当然这个值如果小于TioConfig.heartbeatTimeout，定时检查的时间间隔还是以TioConfig.heartbeatTimeout为准，只是在判断时用此值
    */
   public Long heartbeatTimeout = null;
   /**

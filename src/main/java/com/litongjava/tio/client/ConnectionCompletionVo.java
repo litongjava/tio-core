@@ -27,10 +27,7 @@ public class ConnectionCompletionVo {
 
   private CountDownLatch countDownLatch = null;
 
-  private Node targetNode;
-  private ProxyType proxyType = ProxyType.NONE;
-  private String proxyUser;
-  private String proxyPass;
+  private ProxyInfo proxyInfo;
 
   /**
    * @author tanyaowu
@@ -176,37 +173,11 @@ public class ConnectionCompletionVo {
     this.serverNode = serverNode;
   }
 
-  // ===== 新增 getter/setter =====
-  public Node getTargetNode() {
-    return targetNode;
+  public ProxyInfo getProxyInfo() {
+    return proxyInfo;
   }
 
-  public void setTargetNode(Node targetNode) {
-    this.targetNode = targetNode;
+  public void setProxyInfo(ProxyInfo proxyInfo) {
+    this.proxyInfo = proxyInfo;
   }
-
-  public ProxyType getProxyType() {
-    return proxyType;
-  }
-
-  public void setProxyType(ProxyType proxyType) {
-    this.proxyType = proxyType == null ? ProxyType.NONE : proxyType;
-  }
-
-  public String getProxyUser() {
-    return proxyUser;
-  }
-
-  public void setProxyUser(String proxyUser) {
-    this.proxyUser = proxyUser;
-  }
-
-  public String getProxyPass() {
-    return proxyPass;
-  }
-
-  public void setProxyPass(String proxyPass) {
-    this.proxyPass = proxyPass;
-  }
-
 }

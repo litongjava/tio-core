@@ -133,9 +133,16 @@ public class TioClient {
     return connect(serverNode, bindIp, bindPort, initClientChannelContext, timeout, true);
   }
 
-  
+  public ClientChannelContext connect(Node dialNode, Node targetNode, Integer timeout, ProxyInfo proxyInfo)
+      throws Exception {
+    return connect(dialNode, null, 0, null, timeout, true, proxyInfo);
+  }
 
-  
+  private ClientChannelContext connect(Node serverNode, String bindIp, Integer bindPort,
+      ClientChannelContext initClientChannelContext, Integer timeout, boolean b) throws Exception {
+    return connect(serverNode, bindIp, bindPort, initClientChannelContext, timeout, true, null);
+  }
+
   /**
    * @param serverNode
    * @param bindIp
@@ -147,7 +154,8 @@ public class TioClient {
    * @throws Exception
    */
   private ClientChannelContext connect(Node serverNode, String bindIp, Integer bindPort,
-      ClientChannelContext initClientChannelContext, Integer timeout, boolean isSyn) throws Exception {
+      ClientChannelContext initClientChannelContext, Integer timeout, boolean isSyn, ProxyInfo proxyInfo)
+      throws Exception {
 
     AsynchronousSocketChannel asynchronousSocketChannel = null;
     ClientChannelContext channelContext = null;
@@ -192,6 +200,8 @@ public class TioClient {
 
     ConnectionCompletionVo attachment = new ConnectionCompletionVo(channelContext, this, isReconnect,
         asynchronousSocketChannel, serverNode, bindIp, bindPort);
+
+    attachment.setProxyInfo(proxyInfo);
 
     if (isSyn) {
       Integer realTimeout = timeout;

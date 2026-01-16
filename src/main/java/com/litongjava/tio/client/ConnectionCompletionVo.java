@@ -4,6 +4,7 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.util.concurrent.CountDownLatch;
 
 import com.litongjava.tio.core.Node;
+import com.litongjava.tio.proxy.ProxyInfo;
 
 /**
  *

@@ -21,6 +21,7 @@ import com.litongjava.tio.core.Node;
 import com.litongjava.tio.core.Tio;
 import com.litongjava.tio.core.ssl.SslFacadeContext;
 import com.litongjava.tio.core.stat.ChannelStat;
+import com.litongjava.tio.proxy.ProxyInfo;
 import com.litongjava.tio.utils.SystemTimer;
 import com.litongjava.tio.utils.Threads;
 import com.litongjava.tio.utils.environment.EnvUtils;

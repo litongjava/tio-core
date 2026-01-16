@@ -1,4 +1,4 @@
-package com.litongjava.tio.client;
+package com.litongjava.tio.proxy;
 
 public enum ProxyType {
   NONE, HTTP, SOCKS5

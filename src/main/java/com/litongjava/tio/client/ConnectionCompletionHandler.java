@@ -15,6 +15,9 @@ import com.litongjava.tio.core.pool.BufferPoolUtils;
 import com.litongjava.tio.core.ssl.SslFacadeContext;
 import com.litongjava.tio.core.ssl.SslUtils;
 import com.litongjava.tio.core.stat.IpStat;
+import com.litongjava.tio.proxy.ProxyHandshake;
+import com.litongjava.tio.proxy.ProxyInfo;
+import com.litongjava.tio.proxy.ProxyType;
 import com.litongjava.tio.utils.SystemTimer;
 import com.litongjava.tio.utils.hutool.CollUtil;
 
@@ -22,8 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  *
- * @author tanyaowu
- * 2017年4月1日 上午9:32:10
+ * @author tanyaowu 2017年4月1日 上午9:32:10
  */
 @Slf4j
 public class ConnectionCompletionHandler implements CompletionHandler<Void, ConnectionCompletionVo> {
@@ -37,7 +39,6 @@ public class ConnectionCompletionHandler implements CompletionHandler<Void, Conn
   public void failed(Throwable throwable, ConnectionCompletionVo attachment) {
     handler(null, attachment, throwable);
   }
-
 
   private void handler(Void result, ConnectionCompletionVo attachment, Throwable throwable) {
     ClientChannelContext channelContext = attachment.getChannelContext();
@@ -53,6 +54,40 @@ public class ConnectionCompletionHandler implements CompletionHandler<Void, Conn
 
     try {
       if (throwable == null) {
+        try {
+          ProxyInfo proxyInfo = attachment.getProxyInfo();
+          Node targetNode = attachment.getServerNode();
+
+          if (proxyInfo != null && proxyInfo.getProxyType() != ProxyType.NONE) {
+            if (targetNode == null) {
+              throw new RuntimeException("proxy enabled but targetNode is null");
+            }
+            String proxyUser = proxyInfo.getProxyUser();
+            String proxyPass = proxyInfo.getProxyPass();
+            String serverIp = targetNode.getIp();
+            int serverPort = targetNode.getPort();
+            ProxyType pt = proxyInfo.getProxyType();
+            if (pt == ProxyType.HTTP) {
+              ProxyHandshake.httpConnect(asynchronousSocketChannel, serverIp, serverPort, proxyUser, proxyPass);
+            } else if (pt == ProxyType.SOCKS5) {
+              ProxyHandshake.socks5Connect(asynchronousSocketChannel, serverIp, serverPort, proxyUser, proxyPass);
+            }
+          }
+        } catch (Throwable ex) {
+          log.error("proxy handshake failed", ex);
+          // 按连接失败处理，让重连逻辑接管
+          boolean f = ReconnConf.put(channelContext);
+          if (!f) {
+            Tio.close(channelContext, null, "proxy handshake failed: " + ex.getMessage(), true, false,
+                ChannelCloseCode.CLIENT_CONNECTION_FAIL);
+          }
+          attachment.setChannelContext(channelContext);
+          if (attachment.getCountDownLatch() != null) {
+            attachment.getCountDownLatch().countDown();
+          }
+          return;
+        }
+
         if (isReconnect) {
           channelContext.setAsynchronousSocketChannel(asynchronousSocketChannel);
 

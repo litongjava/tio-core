@@ -142,6 +142,10 @@ public class TioClient {
     return connect(serverNode, null, null, null, timeout, true, proxyInfo);
   }
 
+  public ClientChannelContext connect(Node serverNode, String bindIp, int bindPort, int timeout, ProxyInfo proxyInfo) throws Exception {
+    return connect(serverNode, bindIp, bindPort, null, timeout, true, proxyInfo);
+  }
+
   private ClientChannelContext connect(Node serverNode, String bindIp, Integer bindPort,
       ClientChannelContext initClientChannelContext, Integer timeout, boolean b) throws Exception {
     return connect(serverNode, bindIp, bindPort, initClientChannelContext, timeout, true, null);

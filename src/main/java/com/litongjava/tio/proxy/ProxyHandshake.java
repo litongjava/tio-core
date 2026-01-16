@@ -28,7 +28,6 @@ public class ProxyHandshake {
       throw new RuntimeException("proxy CONNECT no response");
     in.flip();
     String resp = new String(in.array(), 0, in.remaining(), StandardCharsets.UTF_8);
-
     if (!resp.contains(" 200 ")) {
       throw new RuntimeException("proxy CONNECT failed: " + resp);
     }

@@ -77,7 +77,7 @@ public class SendPacketTask {
       if (nextPacket != null) {
         ByteBuffer byteBuffer = getByteBuffer(nextPacket);
         if (isSsl) {
-          if (!packet.isSslEncrypted()) {
+          if (!nextPacket.isSslEncrypted()) {
             SslVo sslVo = new SslVo(byteBuffer, nextPacket);
             try {
               channelContext.sslFacadeContext.getSslFacade().encrypt(sslVo);

@@ -1,27 +1,31 @@
 package com.litongjava.tio.client;
 
-import com.litongjava.tio.core.Node;
-
 public class ProxyInfo {
-  private Node proxyNode;
   private ProxyType proxyType;
+  private String proxyHost;
+  private Integer proxyPort;
   private String proxyUser;
   private String proxyPass;
 
-  public ProxyInfo(Node targetNode, ProxyType proxyType, String proxyUser, String proxyPass) {
-    super();
-    this.proxyNode = targetNode;
+  public ProxyInfo(String proxyHost, Integer proxyPort) {
+    this.proxyHost = proxyHost;
+    this.proxyPort = proxyPort;
+    this.proxyType = ProxyType.HTTP;
+  }
+
+  public ProxyInfo(String proxyHost, Integer proxyPort, ProxyType proxyType) {
+    this.proxyHost = proxyHost;
+    this.proxyPort = proxyPort;
     this.proxyType = proxyType;
+  }
+
+  public ProxyInfo(ProxyType proxyType, String proxyHost, Integer proxyPort, String proxyUser, String proxyPass) {
+    super();
+    this.proxyType = proxyType;
+    this.proxyHost = proxyHost;
+    this.proxyPort = proxyPort;
     this.proxyUser = proxyUser;
     this.proxyPass = proxyPass;
-  }
-
-  public Node getProxyNode() {
-    return proxyNode;
-  }
-
-  public void setProxyNode(Node proxyNode) {
-    this.proxyNode = proxyNode;
   }
 
   public ProxyType getProxyType() {
@@ -30,6 +34,22 @@ public class ProxyInfo {
 
   public void setProxyType(ProxyType proxyType) {
     this.proxyType = proxyType;
+  }
+
+  public String getProxyHost() {
+    return proxyHost;
+  }
+
+  public void setProxyHost(String proxyHost) {
+    this.proxyHost = proxyHost;
+  }
+
+  public Integer getProxyPort() {
+    return proxyPort;
+  }
+
+  public void setProxyPort(Integer proxyPort) {
+    this.proxyPort = proxyPort;
   }
 
   public String getProxyUser() {
@@ -47,4 +67,5 @@ public class ProxyInfo {
   public void setProxyPass(String proxyPass) {
     this.proxyPass = proxyPass;
   }
+
 }

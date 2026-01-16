@@ -106,7 +106,7 @@ public class TioClient {
    * @throws Exception
    */
   public ClientChannelContext connect(Node serverNode) throws Exception {
-    return connect(serverNode, null);
+    return connect(serverNode, 10);
   }
 
   /**
@@ -133,9 +133,12 @@ public class TioClient {
     return connect(serverNode, bindIp, bindPort, initClientChannelContext, timeout, true);
   }
 
-  public ClientChannelContext connect(Node dialNode, Node targetNode, Integer timeout, ProxyInfo proxyInfo)
-      throws Exception {
-    return connect(dialNode, null, 0, null, timeout, true, proxyInfo);
+  public ClientChannelContext connect(Node serverNode, ProxyInfo proxyInfo) throws Exception {
+    return connect(serverNode, null, null, null, 10, true, proxyInfo);
+  }
+
+  public ClientChannelContext connect(Node serverNode, Integer timeout, ProxyInfo proxyInfo) throws Exception {
+    return connect(serverNode, null, null, null, timeout, true, proxyInfo);
   }
 
   private ClientChannelContext connect(Node serverNode, String bindIp, Integer bindPort,
@@ -196,7 +199,12 @@ public class TioClient {
 
     start = SystemTimer.currTime;
 
-    InetSocketAddress inetSocketAddress = new InetSocketAddress(serverNode.getIp(), serverNode.getPort());
+    InetSocketAddress inetSocketAddress = null;
+    if (proxyInfo != null) {
+      inetSocketAddress = new InetSocketAddress(proxyInfo.getProxyHost(), proxyInfo.getProxyPort());
+    } else {
+      inetSocketAddress = new InetSocketAddress(serverNode.getIp(), serverNode.getPort());
+    }
 
     ConnectionCompletionVo attachment = new ConnectionCompletionVo(channelContext, this, isReconnect,
         asynchronousSocketChannel, serverNode, bindIp, bindPort);
@@ -437,4 +445,5 @@ public class TioClient {
     log.info("client resource has released");
     return ret;
   }
+
 }

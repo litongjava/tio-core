@@ -3,6 +3,9 @@ package com.litongjava.tio.core.task;
 import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.litongjava.aio.Packet;
 import com.litongjava.tio.consts.TioCoreConfigKeys;
 import com.litongjava.tio.core.ChannelContext;
@@ -15,11 +18,8 @@ import com.litongjava.tio.utils.hutool.CollUtil;
 import com.litongjava.tio.utils.lock.MapWithLock;
 import com.litongjava.tio.utils.lock.SetWithLock;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class HandlePacketTask {
-
+  private static final Logger log = LoggerFactory.getLogger(HandlePacketTask.class);
   private final static boolean DIAGNOSTIC_LOG_ENABLED = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_DIAGNOSTIC, false);
   private AtomicLong synFailCount = new AtomicLong();
 

@@ -8,18 +8,18 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.ssl.SslVo;
 import com.litongjava.tio.core.utils.ByteBufferUtils;
 
-import lombok.extern.slf4j.Slf4j;
-
 /**
  * @author tanyaowu
-w */
-@Slf4j
+ */
 public class SSLFacade implements ISSLFacade {
-
+  private static final Logger log = LoggerFactory.getLogger(SSLFacade.class);
   private AtomicLong sslSeq = new AtomicLong();
 
   private Handshaker _handshaker;

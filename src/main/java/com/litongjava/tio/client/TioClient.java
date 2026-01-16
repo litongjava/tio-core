@@ -241,16 +241,12 @@ public class TioClient {
   }
 
   /**
-   *
    * @param serverNode
    * @param bindIp
    * @param bindPort
    * @param timeout    超时时间，单位秒
    * @return
    * @throws Exception
-   *
-   * @author tanyaowu
-   *
    */
   public ClientChannelContext connect(Node serverNode, String bindIp, Integer bindPort, Integer timeout)
       throws Exception {
@@ -272,14 +268,10 @@ public class TioClient {
   }
 
   /**
-   *
    * @param channelContext
    * @param timeout        单位秒
    * @return
    * @throws Exception
-   *
-   * @author tanyaowu
-   *
    */
   public void reconnect(ClientChannelContext channelContext, Integer timeout) throws Exception {
     connect(channelContext.getServerNode(), channelContext.getBindIp(), channelContext.getBindPort(), channelContext,
@@ -295,9 +287,6 @@ public class TioClient {
 
   /**
    * 定时任务：发心跳
-   * 
-   * @author tanyaowu
-   *
    */
   private void startHeartbeatTask() {
     final ClientGroupStat clientGroupStat = (ClientGroupStat) clientTioConfig.groupStat;
@@ -365,9 +354,6 @@ public class TioClient {
 
   /**
    * 启动重连任务
-   *
-   * @author tanyaowu
-   *
    */
   private void startReconnTask() {
     final ReconnConf reconnConf = clientTioConfig.getReconnConf();
@@ -439,16 +425,10 @@ public class TioClient {
     thread.start();
   }
 
-  /**
-   * 
-   * @return
-   * @author tanyaowu
-   */
   public boolean stop() {
     boolean ret = true;
     Threads.close();
     log.info("client resource has released");
     return ret;
   }
-
 }

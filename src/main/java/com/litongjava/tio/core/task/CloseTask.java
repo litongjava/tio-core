@@ -1,5 +1,8 @@
 package com.litongjava.tio.core.task;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.litongjava.tio.client.ClientChannelContext;
 import com.litongjava.tio.client.ClientTioConfig;
 import com.litongjava.tio.client.ReconnConf;
@@ -7,10 +10,8 @@ import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.maintain.MaintainUtils;
 import com.litongjava.tio.utils.SystemTimer;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 public class CloseTask {
+  private static final Logger log = LoggerFactory.getLogger(CloseTask.class);
   public static void close(ChannelContext channelContext) {
     boolean isNeedRemove = channelContext.closeMeta.isNeedRemove;
     String remark = channelContext.closeMeta.remark;

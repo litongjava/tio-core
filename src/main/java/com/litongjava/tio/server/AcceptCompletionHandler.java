@@ -8,6 +8,9 @@ import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.litongjava.enhance.buffer.VirtualBuffer;
 import com.litongjava.tio.consts.TioCoreConfigKeys;
 import com.litongjava.tio.core.ReadCompletionHandler;
@@ -19,13 +22,11 @@ import com.litongjava.tio.utils.SystemTimer;
 import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.hutool.CollUtil;
 
-import lombok.extern.slf4j.Slf4j;
-
 /**
  * @author tanyaowu 2017年4月4日 上午9:27:45
  */
-@Slf4j
 public class AcceptCompletionHandler implements CompletionHandler<AsynchronousSocketChannel, TioServer> {
+  private static final Logger log = LoggerFactory.getLogger(AcceptCompletionHandler.class);
   private final static boolean DIAGNOSTIC_LOG_ENABLED = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_DIAGNOSTIC, false);
 
   /**

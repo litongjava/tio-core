@@ -7,6 +7,9 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.litongjava.aio.Packet;
 import com.litongjava.aio.PacketMeta;
 import com.litongjava.model.func.Converter;
@@ -23,14 +26,12 @@ import com.litongjava.tio.utils.lock.ReadLockHandler;
 import com.litongjava.tio.utils.lock.SetWithLock;
 import com.litongjava.tio.utils.page.PageUtils;
 
-import lombok.extern.slf4j.Slf4j;
-
 /**
  * The Class Tio. t-io用户关心的API几乎全在这
  * @author tanyaowu
  */
-@Slf4j
 public class Tio {
+  private static final Logger log = LoggerFactory.getLogger(Tio.class);
   private final static boolean DIAGNOSTIC_LOG_ENABLED = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_DIAGNOSTIC, false);
 
   /**

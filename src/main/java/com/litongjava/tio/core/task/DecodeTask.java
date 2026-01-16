@@ -5,6 +5,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.litongjava.aio.Packet;
 import com.litongjava.tio.core.ChannelCloseCode;
 import com.litongjava.tio.core.ChannelContext;
@@ -19,12 +22,9 @@ import com.litongjava.tio.exception.TioHandlePacketException;
 import com.litongjava.tio.utils.SystemTimer;
 import com.litongjava.tio.utils.hutool.CollUtil;
 
-import lombok.extern.slf4j.Slf4j;
-
 @SuppressWarnings("deprecation")
-@Slf4j
 public class DecodeTask {
-
+  private static final Logger log = LoggerFactory.getLogger(DecodeTask.class);
   private final static boolean DIAGNOSTIC_LOG_ENABLED = TioConfig.disgnostic;
 
   /**

@@ -4,12 +4,14 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.litongjava.enhance.buffer.VirtualBuffer;
 import com.litongjava.tio.client.intf.ClientAioListener;
 import com.litongjava.tio.core.ChannelCloseCode;
 import com.litongjava.tio.core.Node;
 import com.litongjava.tio.core.ReadCompletionHandler;
-import com.litongjava.tio.core.Tio;
 import com.litongjava.tio.core.TioConfig;
 import com.litongjava.tio.core.pool.BufferPoolUtils;
 import com.litongjava.tio.core.ssl.SslFacadeContext;
@@ -21,14 +23,12 @@ import com.litongjava.tio.proxy.ProxyType;
 import com.litongjava.tio.utils.SystemTimer;
 import com.litongjava.tio.utils.hutool.CollUtil;
 
-import lombok.extern.slf4j.Slf4j;
-
 /**
- *
- * @author tanyaowu 2017年4月1日 上午9:32:10
+ * Just for Client
  */
-@Slf4j
 public class ConnectionCompletionHandler implements CompletionHandler<Void, ConnectionCompletionVo> {
+
+  private final Logger log = LoggerFactory.getLogger(this.getClass());
 
   @Override
   public void completed(Void result, ConnectionCompletionVo attachment) {
@@ -75,11 +75,10 @@ public class ConnectionCompletionHandler implements CompletionHandler<Void, Conn
           }
         } catch (Throwable ex) {
           log.error("proxy handshake failed", ex);
-          // 按连接失败处理，让重连逻辑接管
           boolean f = ReconnConf.put(channelContext);
           if (!f) {
-            Tio.close(channelContext, null, "proxy handshake failed: " + ex.getMessage(), true, false,
-                ChannelCloseCode.CLIENT_CONNECTION_FAIL);
+            com.litongjava.tio.core.Tio.close(channelContext, null, "proxy handshake failed: " + ex.getMessage(), true,
+                false, ChannelCloseCode.CLIENT_CONNECTION_FAIL);
           }
           attachment.setChannelContext(channelContext);
           if (attachment.getCountDownLatch() != null) {
@@ -90,7 +89,6 @@ public class ConnectionCompletionHandler implements CompletionHandler<Void, Conn
 
         if (isReconnect) {
           channelContext.setAsynchronousSocketChannel(asynchronousSocketChannel);
-
           clientTioConfig.closeds.remove(channelContext);
         } else {
           channelContext = new ClientChannelContext(clientTioConfig, asynchronousSocketChannel);
@@ -105,8 +103,6 @@ public class ConnectionCompletionHandler implements CompletionHandler<Void, Conn
         isConnected = true;
 
         attachment.setChannelContext(channelContext);
-
-        // clientTioConfig.ips.bind(channelContext);
         clientTioConfig.connecteds.add(channelContext);
 
         ReadCompletionHandler readCompletionHandler = new ReadCompletionHandler(channelContext);
@@ -117,9 +113,11 @@ public class ConnectionCompletionHandler implements CompletionHandler<Void, Conn
         asynchronousSocketChannel.read(readByteBuffer, vBuffer, readCompletionHandler);
 
         log.info("connected to {}", serverNode);
+
         if (isConnected && !isReconnect) {
           channelContext.stat.setTimeFirstConnected(SystemTimer.currTime);
         }
+
       } else {
         log.error(throwable.toString(), throwable);
         if (channelContext == null) {
@@ -130,38 +128,33 @@ public class ConnectionCompletionHandler implements CompletionHandler<Void, Conn
           }
         }
 
-        if (!isReconnect) // 不是重连，则是第一次连接
-        {
+        if (!isReconnect) {
           if (channelContext != null) {
             attachment.setChannelContext(channelContext);
           }
         }
         boolean f = ReconnConf.put(channelContext);
         if (!f) {
-          Tio.close(channelContext, null, "不需要重连，关闭该连接", true, false, ChannelCloseCode.CLIENT_CONNECTION_FAIL);
+          com.litongjava.tio.core.Tio.close(channelContext, null, "不需要重连，关闭该连接", true, false,
+              ChannelCloseCode.CLIENT_CONNECTION_FAIL);
         }
       }
+
     } catch (Throwable e) {
       log.error(e.toString(), e);
-    } finally {
-      if (attachment.getCountDownLatch() != null) {
-        attachment.getCountDownLatch().countDown();
-      }
 
+    } finally {
+      // 关键：SSL 场景先启动握手，再 countDown，避免 connect() 过早返回
       try {
         if (channelContext != null) {
           channelContext.setReconnect(isReconnect);
+
           if (SslUtils.isSsl(channelContext.tioConfig)) {
             if (isConnected) {
-              // channelContext.sslFacadeContext.beginHandshake();
               SslFacadeContext sslFacadeContext = new SslFacadeContext(channelContext);
               sslFacadeContext.beginHandshake();
             } else {
               if (clientAioListener != null) {
-                if (isConnected) {
-                  channelContext.stat.heartbeatTimeoutCount.set(0);
-                  channelContext.setCloseCode(ChannelCloseCode.INIT_STATUS);
-                }
                 clientAioListener.onAfterConnected(channelContext, isConnected, isReconnect);
               }
             }
@@ -173,19 +166,19 @@ public class ConnectionCompletionHandler implements CompletionHandler<Void, Conn
 
           TioConfig tioConfig = channelContext.tioConfig;
           if (CollUtil.isNotEmpty(tioConfig.ipStats.durationList)) {
-            try {
-              for (Long v : tioConfig.ipStats.durationList) {
-                IpStat ipStat = tioConfig.ipStats.get(v, channelContext);
-                ipStat.getRequestCount().incrementAndGet();
-                tioConfig.getIpStatListener().onAfterConnected(channelContext, isConnected, isReconnect, ipStat);
-              }
-            } catch (Exception e) {
-              log.error(e.toString(), e);
+            for (Long v : tioConfig.ipStats.durationList) {
+              IpStat ipStat = tioConfig.ipStats.get(v, channelContext);
+              ipStat.getRequestCount().incrementAndGet();
+              tioConfig.getIpStatListener().onAfterConnected(channelContext, isConnected, isReconnect, ipStat);
             }
           }
         }
       } catch (Throwable e1) {
         log.error(e1.toString(), e1);
+      } finally {
+        if (attachment.getCountDownLatch() != null) {
+          attachment.getCountDownLatch().countDown();
+        }
       }
     }
   }

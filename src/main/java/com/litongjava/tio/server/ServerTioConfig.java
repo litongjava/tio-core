@@ -6,6 +6,9 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.litongjava.enhance.buffer.BufferMemoryStat;
 import com.litongjava.enhance.buffer.BufferMomeryInfo;
 import com.litongjava.enhance.buffer.GlobalScheduler;
@@ -29,15 +32,12 @@ import com.litongjava.tio.utils.hutool.CollUtil;
 import com.litongjava.tio.utils.hutool.StrUtil;
 import com.litongjava.tio.utils.lock.SetWithLock;
 
-import lombok.extern.slf4j.Slf4j;
-
 /**
  * 
  * @author tanyaowu 2016年10月10日 下午5:51:56
  */
-@Slf4j
 public class ServerTioConfig extends TioConfig {
-
+  private static final Logger log = LoggerFactory.getLogger(ServerTioConfig.class);
   private ServerAioHandler serverAioHandler = null;
   private ServerAioListener serverAioListener = null;
   private Thread checkHeartbeatThread = null;

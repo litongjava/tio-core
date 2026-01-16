@@ -25,8 +25,8 @@ public class SslFacadeContext {
 
   private ISSLFacade sslFacade = null;
 
-  //ssl握手是否已经完成, true: 已经完成， false: 还没有完成
-  private boolean isHandshakeCompleted = false;
+  // ssl握手是否已经完成, true: 已经完成， false: 还没有完成
+  private boolean handshakeCompleted = false;
 
   /**
    * 
@@ -37,7 +37,7 @@ public class SslFacadeContext {
     this.channelContext = channelContext;
     this.channelContext.setSslFacadeContext(this);
 
-    this.isHandshakeCompleted = false;
+    this.handshakeCompleted = false;
 
     sslContext = SSLContext.getInstance("TLS");
     KeyManager[] keyManagers = channelContext.tioConfig.sslConfig.getKeyManagerFactory().getKeyManagers();
@@ -47,7 +47,7 @@ public class SslFacadeContext {
     DefaultTaskHandler taskHandler = new DefaultTaskHandler();
 
     boolean isClient = true;
-    if (this.channelContext.isServer()) { //server mode
+    if (this.channelContext.isServer()) { // server mode
       isClient = false;
     }
 
@@ -67,11 +67,11 @@ public class SslFacadeContext {
   }
 
   public boolean isHandshakeCompleted() {
-    return isHandshakeCompleted;
+    return handshakeCompleted;
   }
 
-  public void setHandshakeCompleted(boolean isHandshakeCompleted) {
-    this.isHandshakeCompleted = isHandshakeCompleted;
+  public void setHandshakeCompleted(boolean handshakeCompleted) {
+    this.handshakeCompleted = handshakeCompleted;
   }
 
   public ChannelContext getChannelContext() {

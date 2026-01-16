@@ -11,6 +11,9 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.litongjava.enhance.channel.EnhanceAsynchronousChannelProvider;
 import com.litongjava.enhance.channel.EnhanceAsynchronousServerSocketChannel;
 import com.litongjava.tio.consts.TioCoreConfigKeys;
@@ -20,13 +23,12 @@ import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.executor.TioThreadPoolExecutor;
 import com.litongjava.tio.utils.hutool.StrUtil;
 
-import lombok.extern.slf4j.Slf4j;
-
 /**
  * @author tanyaowu
  */
-@Slf4j
 public class TioServer {
+  private static final Logger log = LoggerFactory.getLogger(TioServer.class);
+  
   private ServerTioConfig serverTioConfig;
   private AsynchronousServerSocketChannel serverSocketChannel;
   private Node serverNode;

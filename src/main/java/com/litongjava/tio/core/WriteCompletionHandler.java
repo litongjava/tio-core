@@ -3,6 +3,9 @@ package com.litongjava.tio.core;
 import java.nio.channels.CompletionHandler;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.litongjava.aio.Packet;
 import com.litongjava.aio.PacketMeta;
 import com.litongjava.tio.consts.TioCoreConfigKeys;
@@ -14,13 +17,11 @@ import com.litongjava.tio.utils.SystemTimer;
 import com.litongjava.tio.utils.environment.EnvUtils;
 import com.litongjava.tio.utils.hutool.CollUtil;
 
-import lombok.extern.slf4j.Slf4j;
-
 /**
  * @author tanyaowu
  */
-@Slf4j
 public class WriteCompletionHandler implements CompletionHandler<Integer, WriteCompletionVo> {
+  private static final Logger log = LoggerFactory.getLogger(WriteCompletionHandler.class);
   private final static boolean DIAGNOSTIC_LOG_ENABLED = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_DIAGNOSTIC, false);
   private ChannelContext channelContext = null;
   // public final ReentrantLock lock = new ReentrantLock();

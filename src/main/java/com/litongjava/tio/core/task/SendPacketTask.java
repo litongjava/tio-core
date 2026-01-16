@@ -11,6 +11,9 @@ import java.util.concurrent.locks.LockSupport;
 
 import javax.net.ssl.SSLException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.litongjava.aio.Packet;
 import com.litongjava.enhance.channel.EnhanceAsynchronousSocketChannel;
 import com.litongjava.tio.core.ChannelCloseCode;
@@ -25,16 +28,13 @@ import com.litongjava.tio.core.ssl.SslVo;
 import com.litongjava.tio.core.utils.TioUtils;
 import com.litongjava.tio.core.vo.WriteCompletionVo;
 
-import lombok.extern.slf4j.Slf4j;
-
 /**
  * Send data to client
  * 
  * @author Tong Li
  */
-@Slf4j
 public class SendPacketTask {
-
+  private static final Logger log = LoggerFactory.getLogger(SendPacketTask.class);
   private final static boolean disgnostic = TioConfig.disgnostic;
 
   public boolean canSend = true;

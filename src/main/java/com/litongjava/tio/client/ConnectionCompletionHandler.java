@@ -17,6 +17,7 @@ import com.litongjava.tio.core.pool.BufferPoolUtils;
 import com.litongjava.tio.core.ssl.SslFacadeContext;
 import com.litongjava.tio.core.ssl.SslUtils;
 import com.litongjava.tio.core.stat.IpStat;
+import com.litongjava.tio.core.task.DecodeTask;
 import com.litongjava.tio.proxy.ProxyHandshake;
 import com.litongjava.tio.proxy.ProxyInfo;
 import com.litongjava.tio.proxy.ProxyType;
@@ -151,7 +152,9 @@ public class ConnectionCompletionHandler implements CompletionHandler<Void, Conn
 
           if (SslUtils.isSsl(channelContext.tioConfig)) {
             if (isConnected) {
-              SslFacadeContext sslFacadeContext = new SslFacadeContext(channelContext);
+              ReadCompletionHandler readCompletionHandler = new ReadCompletionHandler(channelContext);
+              DecodeTask decodeTask = readCompletionHandler.getDecodeTask();
+              SslFacadeContext sslFacadeContext = new SslFacadeContext(channelContext, decodeTask);
               sslFacadeContext.beginHandshake();
             } else {
               if (clientAioListener != null) {

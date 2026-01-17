@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.ssl.SslVo;
 
-class Handshaker {
+public class Handshaker {
   /*
    * The purpose of this class is to conduct a SSL handshake. To do this it
    * requires a SSLEngine as a provider of SSL knowhow. Byte buffers that are
@@ -22,9 +22,6 @@ class Handshaker {
    */
 
   private static Logger log = LoggerFactory.getLogger(Handshaker.class);
-
-  @SuppressWarnings("unused")
-  private final static String TAG = "Handshaker";
   private final ITaskHandler _taskHandler;
   private final Worker _worker;
   private boolean _finished;
@@ -82,47 +79,101 @@ class Handshaker {
   private void shakehands() throws SSLException {
     HandshakeStatus handshakeStatus = _worker.getHandshakeStatus();
     log.info("{}, handshakeStatus:{}", this.channelContext, handshakeStatus);
+
     switch (handshakeStatus) {
-    case NOT_HANDSHAKING:
-      /* Occurs after handshake is over 握手早就完成了 */
-      break;
-    case FINISHED: // 握手刚刚完成
-      handshakeFinished();
-      break;
-    case NEED_TASK: // 运行任务
-      _taskHandler.process(new Tasks(_worker, this));
-      break;
-    case NEED_WRAP: // 加密
-      SSLEngineResult w_result = _worker.wrap(new SslVo(), null);
-      if (w_result.getStatus().equals(SSLEngineResult.Status.CLOSED) && null != _sessionClosedListener) {
-        _sessionClosedListener.onSessionClosed();
-      }
-      if (w_result.getHandshakeStatus().equals(SSLEngineResult.HandshakeStatus.FINISHED)) {
-        handshakeFinished();
-      } else {
-        shakehands();
-      }
-      break;
-    case NEED_UNWRAP:
-      if (_worker.pendingUnwrap()) {
-        SSLEngineResult u_result = _worker.unwrap(null);
-        debug("Unwrap result " + u_result);
-        if (u_result.getHandshakeStatus().equals(SSLEngineResult.HandshakeStatus.FINISHED)) {
+      case NOT_HANDSHAKING:
+        /*
+         * Occurs after handshake is over.
+         * 关键：这里必须兜底。
+         * 某些情况下 FINISHED 不一定会被你捕捉到（尤其是 TLS1.3 / 状态切换时机差异），但最终会进入 NOT_HANDSHAKING。
+         * 如果此时还没标记完成，会导致上层一直等待握手完成。
+         */
+        if (!_finished) {
           handshakeFinished();
+        } else {
+          // 已完成则确保 completed 标志存在（防止 handshakeFinished() 里因空指针等未设置）
+          markHandshakeCompleted();
         }
-        if (u_result.getStatus().equals(SSLEngineResult.Status.OK)) {
+        break;
+
+      case FINISHED: // 握手刚刚完成
+        handshakeFinished();
+        break;
+
+      case NEED_TASK: // 运行任务
+        _taskHandler.process(new Tasks(_worker, this));
+        break;
+
+      case NEED_WRAP: // 加密
+        SSLEngineResult w_result = _worker.wrap(new SslVo(), null);
+        if (w_result.getStatus().equals(SSLEngineResult.Status.CLOSED) && null != _sessionClosedListener) {
+          _sessionClosedListener.onSessionClosed();
+        }
+        if (w_result.getHandshakeStatus().equals(SSLEngineResult.HandshakeStatus.FINISHED)) {
+          handshakeFinished();
+        } else {
           shakehands();
         }
-      } else {
-        debug("No pending data to unwrap");
-      }
-      break;
+        break;
+
+      case NEED_UNWRAP:
+        if (_worker.pendingUnwrap()) {
+          SSLEngineResult u_result = _worker.unwrap(null);
+          debug("Unwrap result " + u_result);
+          if (u_result.getHandshakeStatus().equals(SSLEngineResult.HandshakeStatus.FINISHED)) {
+            handshakeFinished();
+          }
+          if (u_result.getStatus().equals(SSLEngineResult.Status.OK)) {
+            shakehands();
+          }
+        } else {
+          debug("No pending data to unwrap");
+        }
+        break;
     }
   }
 
-  private void handshakeFinished() {
-    _finished = true;
-    _hscl.onComplete();
+  /**
+   * 只负责把 sslFacadeContext 的握手完成标志置为 true（幂等）
+   */
+  private void markHandshakeCompleted() {
+    try {
+      if (channelContext != null
+          && channelContext.sslFacadeContext != null
+          && !channelContext.sslFacadeContext.isHandshakeCompleted()) {
+        channelContext.sslFacadeContext.setHandshakeCompleted(true);
+        log.info("{}, SSL handshake completed flag set", channelContext);
+      }
+    } catch (Throwable t) {
+      // 这里不要让异常影响握手状态机
+      log.warn("{}, Failed to set handshakeCompleted flag: {}", channelContext, t.toString());
+    }
   }
 
+  /**
+   * 握手完成：幂等，避免重复回调/重复设置
+   */
+  private synchronized void handshakeFinished() {
+    if (_finished) {
+      // 已完成则确保标志存在
+      markHandshakeCompleted();
+      return;
+    }
+
+    _finished = true;
+
+    // 先标记完成，保证上层等待能放行
+    markHandshakeCompleted();
+
+    // 再通知监听器（避免监听器异常导致标志没设上）
+    try {
+      if (_hscl != null) {
+        _hscl.onComplete();
+      } else {
+        log.warn("{}, handshake finished but no IHandshakeCompletedListener is set", channelContext);
+      }
+    } catch (Throwable t) {
+      log.error("{}, exception in handshake completion listener", channelContext, t);
+    }
+  }
 }

@@ -1,7 +1,6 @@
 package com.litongjava.tio.core.ssl;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.security.KeyStore;
 
@@ -12,8 +11,7 @@ import com.litongjava.tio.utils.hutool.ResourceUtil;
 import com.litongjava.tio.utils.hutool.StrUtil;
 
 /**
- * @author tanyaowu
- *
+ * @author Tong Li
  */
 public class SslConfig {
 
@@ -22,34 +20,23 @@ public class SslConfig {
   private String passwd = null;
 
   private KeyManagerFactory keyManagerFactory;
-
   private TrustManagerFactory trustManagerFactory;
 
-  /**
-   * 
-   * @param keyStoreInputStream
-   * @param trustStoreInputStream
-   * @param passwd
-   * @throws Exception
-   */
-  private SslConfig(InputStream keyStoreInputStream, InputStream trustStoreInputStream, String passwd)
+  private boolean isClient;
+
+  private SslConfig(InputStream keyStoreInputStream, InputStream trustStoreInputStream, String passwd, boolean isClient)
       throws Exception {
     this.keyStoreInputStream = keyStoreInputStream;
     this.trustStoreInputStream = trustStoreInputStream;
     this.passwd = passwd;
+    this.isClient = isClient;
     this.init();
   }
 
-  /**
-   * 
-   * @param keyStoreFile 如果是以"classpath:"开头，则从classpath中查找，否则视为普通的文件路径
-   * @param trustStoreFile 如果是以"classpath:"开头，则从classpath中查找，否则视为普通的文件路径
-   * @param passwd 
-   * @throws FileNotFoundException
-   */
   public static SslConfig forServer(String keyStoreFile, String trustStoreFile, String passwd) throws Exception {
-    InputStream keyStoreInputStream = null;
-    InputStream trustStoreInputStream = null;
+    InputStream keyStoreInputStream;
+    InputStream trustStoreInputStream;
+
     if (StrUtil.startWithIgnoreCase(keyStoreFile, "classpath:")) {
       keyStoreInputStream = ResourceUtil.getResourceAsStream(keyStoreFile);
     } else {
@@ -61,80 +48,61 @@ public class SslConfig {
     } else {
       trustStoreInputStream = new FileInputStream(trustStoreFile);
     }
+
     return forServer(keyStoreInputStream, trustStoreInputStream, passwd);
   }
 
-  /**
-   * 给服务器用的
-   * @param keyStoreInputStream
-   * @param trustStoreInputStream
-   * @param passwd
-   * @return
-   * @throws Exception
-   */
   public static SslConfig forServer(InputStream keyStoreInputStream, InputStream trustStoreInputStream, String passwd)
       throws Exception {
-    SslConfig sslConfig = new SslConfig(keyStoreInputStream, trustStoreInputStream, passwd);
-    return sslConfig;
+    return new SslConfig(keyStoreInputStream, trustStoreInputStream, passwd, false);
   }
 
   /**
-   * 给客户端用的
-   * @return
-   * @throws Exception
+   * 客户端默认使用“系统默认信任库”（JDK cacerts）
    */
   public static SslConfig forClient() throws Exception {
-    SslConfig sslConfig = new SslConfig(null, null, null);
-    return sslConfig;
+    // 注意：isClient=true，且两个 InputStream 都为 null，表示用默认信任库
+    return new SslConfig(null, null, null, true);
   }
 
   /**
-   * 
-   * @throws Exception
+   * 客户端：指定自定义 truststore
    */
+  public static SslConfig forClient(InputStream trustStoreInputStream, String passwd) throws Exception {
+    return new SslConfig(null, trustStoreInputStream, passwd, true);
+  }
+
   public void init() throws Exception {
-    KeyStore keyStore = null;// KeyStore.getInstance("JKS");//KeyStore.getInstance(KeyStore.getDefaultType());
-    KeyStore trustStore = null;// KeyStore.getInstance("JKS");//KeyStore.getInstance(KeyStore.getDefaultType());
-
     char[] passChars = null;
-
     if (passwd != null) {
       passChars = passwd.toCharArray();
     }
 
+    KeyStore keyStore = null;
     if (keyStoreInputStream != null) {
-      keyStore = KeyStore.getInstance("JKS");
+      keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
       keyStore.load(keyStoreInputStream, passChars);
     }
 
-    if (trustStoreInputStream != null) {
-      trustStore = KeyStore.getInstance("JKS");
-      trustStore.load(trustStoreInputStream, passChars);
-    }
-
-    keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
+    keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
     keyManagerFactory.init(keyStore, passChars);
 
-    trustManagerFactory = TrustManagerFactory.getInstance("SunX509");
-    trustManagerFactory.init(trustStore);
+    trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
 
-    // System.setProperty("javax.net.debug", "all");
+    if (trustStoreInputStream != null) {
+      KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+      trustStore.load(trustStoreInputStream, passChars);
+      trustManagerFactory.init(trustStore);
+    } else {
+      trustManagerFactory.init((KeyStore) null);
+    }
   }
 
   public KeyManagerFactory getKeyManagerFactory() {
     return keyManagerFactory;
   }
 
-  public void setKeyManagerFactory(KeyManagerFactory keyManagerFactory) {
-    this.keyManagerFactory = keyManagerFactory;
-  }
-
   public TrustManagerFactory getTrustManagerFactory() {
     return trustManagerFactory;
   }
-
-  public void setTrustManagerFactory(TrustManagerFactory trustManagerFactory) {
-    this.trustManagerFactory = trustManagerFactory;
-  }
-
 }

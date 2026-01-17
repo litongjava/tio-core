@@ -84,7 +84,7 @@ public class DecodeTask {
           ChannelStat channelStat = channelContext.stat;
           channelStat.decodeFailCount++;
           // 检查慢包攻击
-          if (channelContext.getTioConfig().checkAttacks) {
+          if (channelContext.getTioConfig().checkAttacks && channelContext.isServer()) {
             if (channelStat.decodeFailCount > 10) {
               // int capacity = lastByteBuffer.capacity();
               int per = readableLength / channelStat.decodeFailCount;

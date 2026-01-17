@@ -48,13 +48,18 @@ public class SslListener implements ISSLListener {
   public void onPlainData(ByteBuffer plainBuffer) {
     // This is the deciphered payload for your app to consume
     SslFacadeContext sslFacadeContext = channelContext.sslFacadeContext;
+    DecodeTask decodeTask = sslFacadeContext.getDecodeTask();
 
-    if (sslFacadeContext.isHandshakeCompleted()) {
-      log.info("{}, After receiving the data decrypted by SSL, the SSL handshake is complete and ready to be decoded，{}, isSSLHandshakeCompleted {}", channelContext, plainBuffer,
-          sslFacadeContext.isHandshakeCompleted());
-      new DecodeTask().decode(channelContext, plainBuffer);
+    boolean handshakeCompleted = sslFacadeContext.isHandshakeCompleted();
+    if (handshakeCompleted) {
+      log.info(
+          "{}, After receiving the data decrypted by SSL, the SSL handshake is complete and ready to be decoded，{}, isSSLHandshakeCompleted {}",
+          channelContext, plainBuffer, handshakeCompleted);
+      decodeTask.decode(channelContext, plainBuffer);
     } else {
-      log.info("{}, SSL decrypted data is received, but the SSL handshake is not complete，{}, isSSLHandshakeCompleted {}", channelContext, plainBuffer, sslFacadeContext.isHandshakeCompleted());
+      log.info(
+          "{}, SSL decrypted data is received, but the SSL handshake is not complete，{}, isSSLHandshakeCompleted {}",
+          channelContext, plainBuffer, handshakeCompleted);
     }
   }
 

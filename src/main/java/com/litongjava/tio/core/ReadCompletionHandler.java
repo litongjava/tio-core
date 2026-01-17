@@ -23,19 +23,32 @@ import com.litongjava.tio.utils.hutool.CollUtil;
  * @author tanyaowu 2017年4月4日 上午9:22:04
  */
 public class ReadCompletionHandler implements CompletionHandler<Integer, VirtualBuffer> {
-  private final static boolean DIAGNOSTIC_LOG_ENABLED = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_DIAGNOSTIC, false);
+  private final static boolean DIAGNOSTIC_LOG_ENABLED =
+      EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_DIAGNOSTIC, false);
 
   private static Logger log = LoggerFactory.getLogger(ReadCompletionHandler.class);
   private ChannelContext channelContext = null;
   private DecodeTask decodeTask;
 
-  /**
-   *
-   * @param channelContext
-   */
   public ReadCompletionHandler(ChannelContext channelContext) {
     this.channelContext = channelContext;
     this.decodeTask = new DecodeTask();
+  }
+
+  /**
+   * 关键新增：SSL解密后的明文从这里进入，复用同一个 decodeTask 做半包累计
+   */
+  public void handlePlainFromSsl(ByteBuffer plainBuffer) {
+    if (plainBuffer == null) {
+      return;
+    }
+    try {
+      // plainBuffer 要处于可读状态（position..limit）
+      decodeTask.decode(channelContext, plainBuffer);
+    } catch (Throwable e) {
+      log.error("Decode error (plain from ssl)", e);
+      Tio.close(channelContext, e, "unexpected decode error (plain from ssl)", ChannelCloseCode.DECODE_ERROR);
+    }
   }
 
   @Override
@@ -48,7 +61,6 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, Virtual
         tioConfig.groupStat.receivedTcps.incrementAndGet();
         channelContext.stat.receivedBytes.addAndGet(result);
         channelContext.stat.receivedTcps.incrementAndGet();
-
       }
 
       channelContext.stat.latestTimeOfReceivedByte = SystemTimer.currTime;
@@ -76,7 +88,6 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, Virtual
 
       byteBuffer.flip();
       if (channelContext.sslFacadeContext == null) {
-        // decode and run handler
         try {
           decodeTask.decode(channelContext, byteBuffer);
         } catch (Throwable e) {
@@ -115,7 +126,6 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, Virtual
     } else if (result < 0) {
       if (result == -1) {
         String message = "The connection closed by peer";
-
         if (DIAGNOSTIC_LOG_ENABLED) {
           log.info("close {}, because {}", channelContext, message);
         }
@@ -151,12 +161,6 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, Virtual
     channelContext.asynchronousSocketChannel.read(readByteBuffer, virtualBuffer, this);
   }
 
-  /**
-   *
-   * @param exc
-   * @param byteBuffer
-   * @author tanyaowu
-   */
   @Override
   public void failed(Throwable exc, VirtualBuffer virtualBuffer) {
     if (exc instanceof ClosedChannelException) {
@@ -167,4 +171,9 @@ public class ReadCompletionHandler implements CompletionHandler<Integer, Virtual
     }
     Tio.close(channelContext, exc, "Failed to read data: " + exc.getClass().getName(), ChannelCloseCode.READ_ERROR);
   }
+
+  public DecodeTask getDecodeTask() {
+    return decodeTask;
+  }
+  
 }

@@ -160,9 +160,9 @@ public class IpStats {
 
     String ip = null;
     if (useProxyClient && channelContext.getProxyClientNode() != null) {
-      ip = channelContext.getProxyClientNode().getIp();
+      ip = channelContext.getProxyClientNode().getHost();
     } else {
-      ip = channelContext.getClientNode().getIp();
+      ip = channelContext.getClientNode().getHost();
     }
     IpStat ipStat = (IpStat) cache.get(ip);
     if (ipStat == null && forceCreate) {

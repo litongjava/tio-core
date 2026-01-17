@@ -208,7 +208,7 @@ public class TioClient {
     if (proxyInfo != null) {
       inetSocketAddress = new InetSocketAddress(proxyInfo.getProxyHost(), proxyInfo.getProxyPort());
     } else {
-      inetSocketAddress = new InetSocketAddress(serverNode.getIp(), serverNode.getPort());
+      inetSocketAddress = new InetSocketAddress(serverNode.getHost(), serverNode.getPort());
     }
 
     ConnectionCompletionVo attachment = new ConnectionCompletionVo(channelContext, this, isReconnect,
@@ -300,7 +300,7 @@ public class TioClient {
           // final long heartbeatTimeout = clientTioConfig.heartbeatTimeout;
           if (clientTioConfig.heartbeatTimeout <= 0) {
             log.warn(
-                "The user has cancelled the heartbeat sending function at the frame level, and asks the user to complete the heartbeat mechanism by himsel");
+                "The user has cancelled the heartbeat sending function at the frame level, and asks the user to complete the heartbeat mechanism by himself");
             break;
           }
           SetWithLock<ChannelContext> setWithLock = clientTioConfig.connecteds;

@@ -53,7 +53,7 @@ public class UdpClient {
     super();
     this.udpClientConf = udpClientConf;
     Node node = this.udpClientConf.getServerNode();
-    inetSocketAddress = new InetSocketAddress(node.getIp(), node.getPort());
+    inetSocketAddress = new InetSocketAddress(node.getHost(), node.getPort());
     udpSendRunnable = new UdpSendRunnable(queue, udpClientConf, null);
   }
 

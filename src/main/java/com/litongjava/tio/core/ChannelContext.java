@@ -386,7 +386,7 @@ public abstract class ChannelContext extends MapWithLockPropSupport {
       return;
     }
 
-    if (this.clientNode != null && !Objects.equals(UNKNOWN_ADDRESS_IP, this.clientNode.getIp())) {
+    if (this.clientNode != null && !Objects.equals(UNKNOWN_ADDRESS_IP, this.clientNode.getHost())) {
       tioConfig.clientNodes.put(this);
     }
   }
@@ -397,7 +397,7 @@ public abstract class ChannelContext extends MapWithLockPropSupport {
   public void setClosed(boolean isClosed) {
     this.isClosed = isClosed;
     if (isClosed) {
-      if (clientNode == null || !UNKNOWN_ADDRESS_IP.equals(clientNode.getIp())) {
+      if (clientNode == null || !UNKNOWN_ADDRESS_IP.equals(clientNode.getHost())) {
         assignAnUnknownClientNode();
       }
     }
@@ -561,7 +561,7 @@ public abstract class ChannelContext extends MapWithLockPropSupport {
     this.proxyClientNode = proxyClientNode;
     if (proxyClientNode != null) {
       // 将性能数据进行转移
-      if (!Objects.equals(proxyClientNode.getIp(), clientNode.getIp())) {
+      if (!Objects.equals(proxyClientNode.getHost(), clientNode.getHost())) {
 
         if (CollUtil.isNotEmpty(tioConfig.ipStats.durationList)) {
           try {
@@ -626,7 +626,7 @@ public abstract class ChannelContext extends MapWithLockPropSupport {
       client = this.getClientNode();
     }
 
-    String ip = client.getIp();
+    String ip = client.getHost();
     int port = client.getPort();
     return ip + ':' + port;
   }

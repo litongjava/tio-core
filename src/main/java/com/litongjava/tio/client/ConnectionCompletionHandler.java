@@ -65,7 +65,7 @@ public class ConnectionCompletionHandler implements CompletionHandler<Void, Conn
             }
             String proxyUser = proxyInfo.getProxyUser();
             String proxyPass = proxyInfo.getProxyPass();
-            String serverIp = targetNode.getIp();
+            String serverIp = targetNode.getHost();
             int serverPort = targetNode.getPort();
             ProxyType pt = proxyInfo.getProxyType();
             if (pt == ProxyType.HTTP) {

@@ -42,7 +42,7 @@ public class Ips {
       return;
     }
 
-    String ip = channelContext.getClientNode().getIp();
+    String ip = channelContext.getClientNode().getHost();
     if (ChannelContext.UNKNOWN_ADDRESS_IP.equals(ip)) {
       return;
     }
@@ -109,7 +109,7 @@ public class Ips {
     }
 
     try {
-      String ip = channelContext.getClientNode().getIp();
+      String ip = channelContext.getClientNode().getHost();
       if (StrUtil.isBlank(ip)) {
         return;
       }

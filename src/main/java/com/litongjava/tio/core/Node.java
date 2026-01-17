@@ -10,7 +10,7 @@ import com.litongjava.tio.utils.hutool.StrUtil;
  * 2017年10月19日 上午9:40:07
  */
 public class Node implements Comparable<Node> {
-  private String ip;
+  private String host;
   private int port;
   private Byte ssl = 1;
 
@@ -20,7 +20,7 @@ public class Node implements Comparable<Node> {
       ip = "0.0.0.0";
     }
 
-    this.setIp(ip);
+    this.setHost(ip);
     this.setPort(port);
   }
 
@@ -31,7 +31,7 @@ public class Node implements Comparable<Node> {
     }
     // RemoteNode other = (RemoteNode) obj;
 
-    if (Objects.equals(ip, other.getIp()) && Objects.equals(port, other.getPort())) {
+    if (Objects.equals(host, other.getHost()) && Objects.equals(port, other.getPort())) {
       return 0;
     } else {
       return this.toString().compareTo(other.toString());
@@ -44,11 +44,11 @@ public class Node implements Comparable<Node> {
       return false;
     }
     Node other = (Node) obj;
-    return ip.equals(other.getIp()) && port == other.getPort();
+    return host.equals(other.getHost()) && port == other.getPort();
   }
 
-  public String getIp() {
-    return ip;
+  public String getHost() {
+    return host;
   }
 
   public int getPort() {
@@ -57,11 +57,11 @@ public class Node implements Comparable<Node> {
 
   @Override
   public int hashCode() {
-    return (ip + ":" + port).hashCode();
+    return (host + ":" + port).hashCode();
   }
 
-  public void setIp(String ip) {
-    this.ip = ip;
+  public void setHost(String host) {
+    this.host = host;
   }
 
   public void setPort(int port) {
@@ -71,7 +71,7 @@ public class Node implements Comparable<Node> {
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    builder.append(ip).append(":").append(port);
+    builder.append(host).append(":").append(port);
     return builder.toString();
   }
 

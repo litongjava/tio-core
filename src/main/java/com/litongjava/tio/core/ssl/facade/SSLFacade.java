@@ -165,7 +165,7 @@ public class SSLFacade implements ISSLFacade {
           serverNode = cc.getServerNode();
         }
         if (serverNode != null) {
-          peerHost = serverNode.getIp();
+          peerHost = serverNode.getHost();
           peerPort = serverNode.getPort();
           log.info("{}, SSLEngine peerHost={}, peerPort={}", channelContext, peerHost, peerPort);
 

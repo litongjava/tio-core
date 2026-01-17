@@ -51,7 +51,7 @@ public class UdpServer {
         // 演示 start ---- 下面的代码仅作演示，如果两边要交互，那么两边都要开udpclient和udpserver
         int otherPartyPort = 8000;
         DatagramPacket datagramPacket = new DatagramPacket(data, data.length,
-            new InetSocketAddress(remote.getIp(), otherPartyPort));
+            new InetSocketAddress(remote.getHost(), otherPartyPort));
         try {
           datagramSocket.send(datagramPacket);
         } catch (Throwable e) {
@@ -99,7 +99,7 @@ public class UdpServer {
   }
 
   public void send(byte[] data, Node remoteNode) {
-    InetSocketAddress inetSocketAddress = new InetSocketAddress(remoteNode.getIp(), remoteNode.getPort());
+    InetSocketAddress inetSocketAddress = new InetSocketAddress(remoteNode.getHost(), remoteNode.getPort());
     DatagramPacket datagramPacket = new DatagramPacket(data, data.length, inetSocketAddress);
     sendQueue.add(datagramPacket);
   }

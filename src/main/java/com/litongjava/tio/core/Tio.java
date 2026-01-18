@@ -1035,7 +1035,7 @@ public class Tio {
         countDownLatch.countDown();
       }
       if (channelContext != null) {
-        log.error("can't send data, {}, isClosed:{}, isRemoved:{}", channelContext, channelContext.isClosed, channelContext.isRemoved);
+        log.error("cancel send data {}, closed:{}, removed:{}", channelContext, channelContext.isClosed, channelContext.isRemoved);
       }
       return false;
     }

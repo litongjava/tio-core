@@ -55,6 +55,8 @@ public abstract class ChannelContext extends MapWithLockPropSupport {
   public String userId;
   private String token;
   private String bsId;
+  private Long dataId;
+  private Boolean dataBool;
   public boolean isWaitingClose = false;
   public boolean isClosed = true;
   public boolean isRemoved = false;
@@ -629,5 +631,21 @@ public abstract class ChannelContext extends MapWithLockPropSupport {
     String ip = client.getHost();
     int port = client.getPort();
     return ip + ':' + port;
+  }
+
+  public Long getDataId() {
+    return dataId;
+  }
+
+  public void setDataId(Long dataId) {
+    this.dataId = dataId;
+  }
+
+  public Boolean getDataBool() {
+    return dataBool;
+  }
+
+  public void setDataBool(Boolean dataBool) {
+    this.dataBool = dataBool;
   }
 }

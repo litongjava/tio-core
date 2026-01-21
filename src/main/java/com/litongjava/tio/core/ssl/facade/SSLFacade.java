@@ -12,35 +12,33 @@ import javax.net.ssl.SSLParameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.litongjava.tio.consts.TioConst;
 import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.Node;
 import com.litongjava.tio.core.ssl.SslVo;
 import com.litongjava.tio.core.utils.ByteBufferUtils;
 
-/**
- * @author tanyaowu
- */
 public class SSLFacade implements ISSLFacade {
   private static final Logger log = LoggerFactory.getLogger(SSLFacade.class);
-  private AtomicLong sslSeq = new AtomicLong();
+
+
+  private final AtomicLong sslSeq = new AtomicLong();
 
   private Handshaker _handshaker;
   private IHandshakeCompletedListener _hcl;
-  private final Worker _worker;
-  private boolean _clientMode;
-  private ChannelContext channelContext;
+  private final SSLFacdeWorker _worker;
+  private final boolean _clientMode;
+  private final ChannelContext channelContext;
 
   public SSLFacade(ChannelContext channelContext, SSLContext context, boolean client, boolean clientAuthRequired,
       ITaskHandler taskHandler) {
     this.channelContext = channelContext;
-
     final String who = client ? "client" : "server";
 
-    // 关键修复：带 peerHost/peerPort 创建 SSLEngine（启用 SNI）
     SSLEngine engine = makeSSLEngine(context, client, clientAuthRequired, channelContext);
 
     Buffers buffers = new Buffers(engine.getSession(), channelContext);
-    _worker = new Worker(who, engine, buffers, channelContext);
+    _worker = new SSLFacdeWorker(who, engine, buffers, channelContext);
     _handshaker = new Handshaker(client, _worker, taskHandler, channelContext);
     _clientMode = client;
   }
@@ -83,13 +81,9 @@ public class SSLFacade implements ISSLFacade {
     ByteBuffer src = sslVo.getByteBuffer();
     ByteBuffer[] byteBuffers = ByteBufferUtils.split(src, 1024 * 8);
     if (byteBuffers == null) {
-      log.debug("{}, 准备, SSL加密{}, 明文:{}", channelContext, channelContext.getId() + "_" + seq, sslVo);
       SSLEngineResult result = _worker.wrap(sslVo, sslVo.getByteBuffer());
-      log.debug("{}, 完成, SSL加密{}, 明文:{}, 结果:{}", channelContext, channelContext.getId() + "_" + seq, sslVo, result);
-
+      log.debug("{}, SSL wrap seq={}, result={}", channelContext, channelContext.getId() + "_" + seq, result);
     } else {
-      log.debug("{}, 准备, SSL加密{}, 包过大，被拆成了[{}]个包进行发送, 明文:{}", channelContext, channelContext.getId() + "_" + seq,
-          byteBuffers.length, sslVo);
       ByteBuffer[] encryptedByteBuffers = new ByteBuffer[byteBuffers.length];
       int alllen = 0;
       for (int i = 0; i < byteBuffers.length; i++) {
@@ -98,13 +92,13 @@ public class SSLFacade implements ISSLFacade {
         ByteBuffer encryptedByteBuffer = sslVo1.getByteBuffer();
         encryptedByteBuffers[i] = encryptedByteBuffer;
         alllen += encryptedByteBuffer.limit();
-        log.debug("{}, 完成, SSL加密{}, 明文:{}, 拆包[{}]的结果:{}", channelContext, channelContext.getId() + "_" + seq, sslVo,
+        log.debug("{}, SSL wrap split seq={}, part={}, result={}", channelContext, channelContext.getId() + "_" + seq,
             (i + 1), result);
       }
 
       ByteBuffer encryptedByteBuffer = ByteBuffer.allocate(alllen);
-      for (int i = 0; i < encryptedByteBuffers.length; i++) {
-        encryptedByteBuffer.put(encryptedByteBuffers[i]);
+      for (ByteBuffer bb : encryptedByteBuffers) {
+        encryptedByteBuffer.put(bb);
       }
       encryptedByteBuffer.flip();
       sslVo.setByteBuffer(encryptedByteBuffer);
@@ -114,9 +108,8 @@ public class SSLFacade implements ISSLFacade {
   @Override
   public void decrypt(ByteBuffer byteBuffer) throws SSLException {
     long seq = sslSeq.incrementAndGet();
-    log.debug("{}, 准备, SSL解密{}, 密文:{}", channelContext, channelContext.getId() + "_" + seq, byteBuffer);
     SSLEngineResult result = _worker.unwrap(byteBuffer);
-    log.debug("{}, 完成, SSL解密{}, 密文:{}, 结果:{}", channelContext, channelContext.getId() + "_" + seq, byteBuffer, result);
+    log.debug("{}, SSL unwrap seq={}, result={}", channelContext, channelContext.getId() + "_" + seq, result);
     _handshaker.handleUnwrapResult(result);
   }
 
@@ -147,10 +140,6 @@ public class SSLFacade implements ISSLFacade {
     });
   }
 
-  /**
-   * 关键修复点： 1) client 模式下使用 createSSLEngine(peerHost, peerPort) 以启用 SNI 2) 可选：启用
-   * HTTPS endpoint identification（严格域名校验）
-   */
   private SSLEngine makeSSLEngine(SSLContext context, boolean client, boolean clientAuthRequired, ChannelContext cc) {
     SSLEngine engine;
 
@@ -158,38 +147,54 @@ public class SSLFacade implements ISSLFacade {
       String peerHost = null;
       int peerPort = -1;
 
+      // 1) 优先用显式 TLS 目标（防止代理场景 serverNode 变成 127.0.0.1）
       try {
-        Node serverNode = null;
-        // 客户端一般是 serverNode
-        if (cc != null) {
-          serverNode = cc.getServerNode();
+        Object h = (cc != null) ? cc.getAttribute(TioConst.ATTR_TLS_PEER_HOST) : null;
+        Object p = (cc != null) ? cc.getAttribute(TioConst.ATTR_TLS_PEER_PORT) : null;
+        if (h instanceof String) {
+          peerHost = (String) h;
         }
-        if (serverNode != null) {
-          peerHost = serverNode.getHost();
-          peerPort = serverNode.getPort();
-          log.info("{}, SSLEngine peerHost={}, peerPort={}", channelContext, peerHost, peerPort);
-
+        if (p instanceof Integer) {
+          peerPort = (Integer) p;
+        } else if (p instanceof String) {
+          try {
+            peerPort = Integer.parseInt((String) p);
+          } catch (Exception ignore) {
+          }
         }
       } catch (Throwable ignore) {
       }
 
+      // 2) fallback：用 serverNode（正常情况下就是目标域名:443）
+      if (peerHost == null || peerPort <= 0) {
+        try {
+          Node serverNode = (cc != null) ? cc.getServerNode() : null;
+          if (serverNode != null) {
+            peerHost = serverNode.getHost();
+            peerPort = serverNode.getPort();
+          }
+        } catch (Throwable ignore) {
+        }
+      }
+
       if (peerHost != null && peerPort > 0) {
         engine = context.createSSLEngine(peerHost, peerPort);
+        log.info("{}, SSLEngine peerHost={}, peerPort={}", channelContext, peerHost, peerPort);
       } else {
-        // 兜底：没有 host/port 也能跑，但可能缺 SNI（不推荐）
         engine = context.createSSLEngine();
         log.warn("{}, createSSLEngine() without peerHost/peerPort, SNI may be missing", channelContext);
       }
 
       engine.setUseClientMode(true);
 
-      // 开启 HTTPS 域名校验（建议开启；如果你 Node.ip 真的是 IP 而不是域名，这里会校验失败）
+      // 可选：开启 HTTPS 域名校验（建议），但只在看起来像域名时启用，避免 IP/localhost 噪音
       try {
-        SSLParameters params = engine.getSSLParameters();
-        params.setEndpointIdentificationAlgorithm("HTTPS");
-        engine.setSSLParameters(params);
+        if (peerHost != null && looksLikeHostname(peerHost)) {
+          SSLParameters params = engine.getSSLParameters();
+          params.setEndpointIdentificationAlgorithm("HTTPS");
+          engine.setSSLParameters(params);
+        }
       } catch (Throwable t) {
-        // 某些老环境可能不支持，忽略
         log.debug("{}, unable to set endpointIdentificationAlgorithm: {}", channelContext, t.toString());
       }
 
@@ -200,5 +205,27 @@ public class SSLFacade implements ISSLFacade {
     }
 
     return engine;
+  }
+
+  private static boolean looksLikeHostname(String host) {
+    if (host == null)
+      return false;
+    String h = host.trim();
+    if (h.isEmpty())
+      return false;
+    if ("localhost".equalsIgnoreCase(h))
+      return false;
+    // 粗略判断：含字母/连字符/点，且不是纯数字点号形式
+    boolean hasLetter = false;
+    for (int i = 0; i < h.length(); i++) {
+      char c = h.charAt(i);
+      if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+        hasLetter = true;
+        break;
+      }
+    }
+    if (!hasLetter)
+      return false; // 防止 127.0.0.1 这种
+    return h.indexOf('.') >= 0;
   }
 }

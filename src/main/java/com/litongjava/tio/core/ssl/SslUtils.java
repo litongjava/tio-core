@@ -9,9 +9,6 @@ import com.litongjava.tio.core.TioConfig;
  */
 public class SslUtils {
 
-	/**
-	 * 
-	 */
 	private SslUtils() {
 
 	}

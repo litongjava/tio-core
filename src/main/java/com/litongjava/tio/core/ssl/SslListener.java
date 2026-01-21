@@ -29,7 +29,7 @@ public class SslListener implements ISSLListener {
 
   @Override
   public void onWrappedData(SslVo sslVo) {
-    log.info("{}, Received data after SSL encryption, ready to be sent out {}", channelContext, sslVo);
+    //log.info("{}, Received data after SSL encryption, ready to be sent out {}", channelContext, sslVo);
 
     Object obj = sslVo.getObj();
     if (obj == null) { // 如果是null，则是握手尚未完成时的数据
@@ -52,7 +52,7 @@ public class SslListener implements ISSLListener {
 
     boolean handshakeCompleted = sslFacadeContext.isHandshakeCompleted();
     if (handshakeCompleted) {
-      log.info(
+      log.debug(
           "{}, After receiving the data decrypted by SSL, the SSL handshake is complete and ready to be decoded，{}, isSSLHandshakeCompleted {}",
           channelContext, plainBuffer, handshakeCompleted);
       decodeTask.decode(channelContext, plainBuffer);

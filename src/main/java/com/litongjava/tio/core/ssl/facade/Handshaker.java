@@ -23,7 +23,7 @@ public class Handshaker {
 
   private static Logger log = LoggerFactory.getLogger(Handshaker.class);
   private final ITaskHandler _taskHandler;
-  private final Worker _worker;
+  private final SSLFacdeWorker _worker;
   private boolean _finished;
   private IHandshakeCompletedListener _hscl;
   private ISessionClosedListener _sessionClosedListener;
@@ -31,7 +31,7 @@ public class Handshaker {
   private boolean _client;
   private ChannelContext channelContext;
 
-  public Handshaker(boolean client, Worker worker, ITaskHandler taskHandler, ChannelContext channelContext) {
+  public Handshaker(boolean client, SSLFacdeWorker worker, ITaskHandler taskHandler, ChannelContext channelContext) {
     this.channelContext = channelContext;
     _worker = worker;
     _taskHandler = taskHandler;
@@ -78,7 +78,7 @@ public class Handshaker {
    */
   private void shakehands() throws SSLException {
     HandshakeStatus handshakeStatus = _worker.getHandshakeStatus();
-    log.info("{}, handshakeStatus:{}", this.channelContext, handshakeStatus);
+    //log.info("{}, handshakeStatus:{}", this.channelContext, handshakeStatus);
 
     switch (handshakeStatus) {
       case NOT_HANDSHAKING:

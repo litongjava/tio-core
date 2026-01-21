@@ -3,10 +3,10 @@ package com.litongjava.tio.core.ssl.facade;
 import javax.net.ssl.SSLException;
 
 public class Tasks implements ITasks {
-	private final Worker		_worker;
+	private final SSLFacdeWorker		_worker;
 	private final Handshaker	_hs;
 
-	public Tasks(Worker worker, Handshaker hs) {
+	public Tasks(SSLFacdeWorker worker, Handshaker hs) {
 		_worker = worker;
 		_hs = hs;
 	}

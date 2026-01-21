@@ -100,9 +100,16 @@ public class DecodeTask {
 
           if (log.isInfoEnabled() && !channelContext.getTioConfig().ignoreDecodeFail) {
             if (channelStat.decodeFailCount > 3 && channelContext.packetNeededLength == null) {
-              log.info(
-                  "{} Failed to decode for {} consecutive times, the length of data involved in decoding is {} bytes.",
-                  channelContext, channelStat.decodeFailCount, readableLength);
+              if (channelContext.isServer()) {
+                log.info(
+                    "{} Failed to decode for {} consecutive times, the length of data involved in decoding is {} bytes.",
+                    channelContext, channelStat.decodeFailCount, readableLength);
+              } else if (log.isDebugEnabled()) {
+                log.info(
+                    "{} Failed to decode for {} consecutive times, the length of data involved in decoding is {} bytes.",
+                    channelContext, channelStat.decodeFailCount, readableLength);
+              }
+
             }
           }
 

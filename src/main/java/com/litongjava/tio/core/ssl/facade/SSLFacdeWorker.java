@@ -13,9 +13,9 @@ import com.litongjava.tio.core.ChannelContext;
 import com.litongjava.tio.core.ssl.SslVo;
 import com.litongjava.tio.utils.hutool.StrUtil;
 
-class Worker {
+class SSLFacdeWorker {
 
-  private static Logger log = LoggerFactory.getLogger(Worker.class);
+  private static Logger log = LoggerFactory.getLogger(SSLFacdeWorker.class);
 
   /*
    * Uses the SSLEngine and Buffers to perform wrap/unwrap operations. Also, provides access to SSLEngine ops for handshake
@@ -30,7 +30,7 @@ class Worker {
 
   private ChannelContext channelContext;
 
-  Worker(final String debugTag, SSLEngine engine, Buffers buffers, ChannelContext channelContext) {
+  SSLFacdeWorker(final String debugTag, SSLEngine engine, Buffers buffers, ChannelContext channelContext) {
     _engine = engine;
     _buffers = buffers;
     this.channelContext = channelContext;
@@ -201,9 +201,9 @@ class Worker {
     try {
       ByteBuffer plainText = _buffers.get(BufferType.OUT_PLAIN);
       ByteBuffer cipherText = _buffers.get(BufferType.OUT_CIPHER);
-      if (log.isInfoEnabled()) {
-        log.info("{}, doWrap(encryption): plainText:{} to cipherText: {}", channelContext, plainText, cipherText);
-      }
+//      if (log.isInfoEnabled()) {
+//        log.info("{}, doWrap(encryption): plainText:{} to cipherText: {}", channelContext, plainText, cipherText);
+//      }
       return _engine.wrap(plainText, cipherText);
     } catch (SSLException e) {
       throw e;
@@ -219,7 +219,7 @@ class Worker {
     ByteBuffer cipherText = _buffers.get(BufferType.IN_CIPHER);
     ByteBuffer plainText = _buffers.get(BufferType.IN_PLAIN);
     try {
-      log.info("{}, doUnwrap(解密): 密文buffer:{}, 明文buffer: {}", channelContext, cipherText, plainText);
+      log.debug("{}, doUnwrap(解密): 密文buffer:{}, 明文buffer: {}", channelContext, cipherText, plainText);
       return _engine.unwrap(cipherText, plainText);
     } catch (SSLException e) {
       if (log.isInfoEnabled()) {

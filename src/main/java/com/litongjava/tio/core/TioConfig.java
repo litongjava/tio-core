@@ -63,10 +63,11 @@ public abstract class TioConfig extends MapWithLockPropSupport {
 
   public static final int WORK_THREAD_FACTOR = EnvUtils.getInt(ServerConfigKeys.SERVER_WORK_THREAD_FACTOR, 2);
   public static final int cpuNum = Runtime.getRuntime().availableProcessors();
-  private static int workerThreads = EnvUtils.getInt(TioCoreConfigKeys.TIO_CORE_THREADS, cpuNum * WORK_THREAD_FACTOR);
+  private int workerThreads = EnvUtils.getInt(TioCoreConfigKeys.TIO_CORE_THREADS, cpuNum * WORK_THREAD_FACTOR);
 
   private ThreadFactory workThreadFactory;
   private ExecutorService bizExecutor;
+  private ExecutorService workderExecutor;
 
   /**
    * 本jvm中所有的ServerTioConfig对象
@@ -358,12 +359,20 @@ public abstract class TioConfig extends MapWithLockPropSupport {
     this.workThreadFactory = threadFactory;
   }
 
-  public java.util.concurrent.ExecutorService getBizExecutor() {
+  public ExecutorService getBizExecutor() {
     return bizExecutor;
   }
 
-  public void setBizExecutor(java.util.concurrent.ExecutorService e) {
+  public void setBizExecutor(ExecutorService e) {
     this.bizExecutor = e;
+  }
+
+  public ExecutorService getWorkderExecutor() {
+    return workderExecutor;
+  }
+
+  public void setWorkderExecutor(ExecutorService workderExecutor) {
+    this.workderExecutor = workderExecutor;
   }
 
   @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -400,4 +409,5 @@ public abstract class TioConfig extends MapWithLockPropSupport {
       this.ipStats = new IpStats(this, null);
     }
   }
+
 }

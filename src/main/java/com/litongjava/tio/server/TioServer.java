@@ -28,7 +28,7 @@ import com.litongjava.tio.utils.hutool.StrUtil;
  */
 public class TioServer {
   private static final Logger log = LoggerFactory.getLogger(TioServer.class);
-  
+
   private ServerTioConfig serverTioConfig;
   private AsynchronousServerSocketChannel serverSocketChannel;
   private Node serverNode;
@@ -94,20 +94,25 @@ public class TioServer {
       serverSocketChannel = AsynchronousServerSocketChannel.open(channelGroup);
     } else {
       // serverSocketChannel = AsynchronousServerSocketChannel.open();
+      ExecutorService workderExecutor = serverTioConfig.getWorkderExecutor();
       int workerThreads = serverTioConfig.getWorkerThreads();
       log.info("{} worker threads:{}", serverTioConfig.getName(), workerThreads);
-      ThreadFactory threadFactory = serverTioConfig.getWorkThreadFactory();
-      if (threadFactory == null) {
-        AtomicInteger threadNumber = new AtomicInteger(1);
-        threadFactory = r -> new Thread(r, "t-io-" + threadNumber.getAndIncrement());
+
+      if (workderExecutor == null) {
+        ThreadFactory threadFactory = serverTioConfig.getWorkThreadFactory();
+        if (threadFactory == null) {
+          AtomicInteger threadNumber = new AtomicInteger(1);
+          threadFactory = r -> new Thread(r, "t-io-" + threadNumber.getAndIncrement());
+        }
+
+        TioThreadPoolExecutor tioThreadPoolExecutor = new TioThreadPoolExecutor(workerThreads, workerThreads, 0L,
+            TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(workerThreads), threadFactory);
+
+        TioServerExecutorService.tioThreadPoolExecutor = tioThreadPoolExecutor;
+        workderExecutor = tioThreadPoolExecutor;
       }
-
-      TioThreadPoolExecutor tioThreadPoolExecutor = new TioThreadPoolExecutor(workerThreads, workerThreads, 0L,
-          TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(workerThreads), threadFactory);
-
-      TioServerExecutorService.tioThreadPoolExecutor = tioThreadPoolExecutor;
       EnhanceAsynchronousChannelProvider provider = new EnhanceAsynchronousChannelProvider(false);
-      AsynchronousChannelGroup group = provider.openAsynchronousChannelGroup(tioThreadPoolExecutor, workerThreads);
+      AsynchronousChannelGroup group = provider.openAsynchronousChannelGroup(workderExecutor, workerThreads);
 
       // 使用提供者创建服务器通道
       AsynchronousServerSocketChannel openAsynchronousServerSocketChannel = provider

@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import com.litongjava.aio.AioId;
 import com.litongjava.aio.Packet;
+import com.litongjava.constants.ServerConfigKeys;
 import com.litongjava.tio.client.ClientTioConfig;
 import com.litongjava.tio.consts.TioConst;
 import com.litongjava.tio.consts.TioCoreConfigKeys;
@@ -57,11 +58,12 @@ public abstract class TioConfig extends MapWithLockPropSupport {
   /** 是否使用直接内存缓冲区（可通过环境变量开关） */
   public static final boolean direct = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_BUFFER_DIRECT, true);
 
-  public static boolean disgnostic = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_DIAGNOSTIC);
-  public static boolean printStats = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_STATS_PRINT);
+  public static final boolean disgnostic = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_DIAGNOSTIC);
+  public static final boolean printStats = EnvUtils.getBoolean(TioCoreConfigKeys.TIO_CORE_STATS_PRINT);
 
-  private int workerThreads = EnvUtils.getInt(TioCoreConfigKeys.TIO_CORE_THREADS,
-      Runtime.getRuntime().availableProcessors() * 2);
+  public static final int WORK_THREAD_FACTOR = EnvUtils.getInt(ServerConfigKeys.SERVER_WORK_THREAD_FACTOR, 2);
+  public static final int cpuNum = Runtime.getRuntime().availableProcessors();
+  private static int workerThreads = EnvUtils.getInt(TioCoreConfigKeys.TIO_CORE_THREADS, cpuNum * WORK_THREAD_FACTOR);
 
   private ThreadFactory workThreadFactory;
   private ExecutorService bizExecutor;

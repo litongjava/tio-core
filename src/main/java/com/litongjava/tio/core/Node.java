@@ -6,8 +6,7 @@ import com.litongjava.tio.utils.hutool.StrUtil;
 
 /**
  * 
- * @author tanyaowu 
- * 2017年10月19日 上午9:40:07
+ * @author tanyaowu 2017年10月19日 上午9:40:07
  */
 public class Node implements Comparable<Node> {
   private String host;
@@ -87,6 +86,14 @@ public class Node implements Comparable<Node> {
    */
   public void setSsl(Byte ssl) {
     this.ssl = ssl;
+  }
+
+  public String setIp(String ip) {
+    return this.host = ip;
+  }
+
+  public String getIp() {
+    return this.host;
   }
 
 }

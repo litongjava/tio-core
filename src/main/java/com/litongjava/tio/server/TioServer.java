@@ -94,11 +94,11 @@ public class TioServer {
       serverSocketChannel = AsynchronousServerSocketChannel.open(channelGroup);
     } else {
       // serverSocketChannel = AsynchronousServerSocketChannel.open();
-      ExecutorService workderExecutor = serverTioConfig.getWorkderExecutor();
+      readExecutor = serverTioConfig.getWorkderExecutor();
       int workerThreads = serverTioConfig.getWorkerThreads();
       log.info("{} worker threads:{}", serverTioConfig.getName(), workerThreads);
 
-      if (workderExecutor == null) {
+      if (readExecutor == null) {
         ThreadFactory threadFactory = serverTioConfig.getWorkThreadFactory();
         if (threadFactory == null) {
           AtomicInteger threadNumber = new AtomicInteger(1);
@@ -109,14 +109,14 @@ public class TioServer {
             TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(workerThreads), threadFactory);
 
         TioServerExecutorService.tioThreadPoolExecutor = tioThreadPoolExecutor;
-        workderExecutor = tioThreadPoolExecutor;
+        readExecutor = tioThreadPoolExecutor;
       }
       EnhanceAsynchronousChannelProvider provider = new EnhanceAsynchronousChannelProvider(false);
-      AsynchronousChannelGroup group = provider.openAsynchronousChannelGroup(workderExecutor, workerThreads);
+      channelGroup = provider.openAsynchronousChannelGroup(readExecutor, workerThreads);
 
       // 使用提供者创建服务器通道
       AsynchronousServerSocketChannel openAsynchronousServerSocketChannel = provider
-          .openAsynchronousServerSocketChannel(group);
+          .openAsynchronousServerSocketChannel(channelGroup);
       serverSocketChannel = (EnhanceAsynchronousServerSocketChannel) openAsynchronousServerSocketChannel;
     }
 

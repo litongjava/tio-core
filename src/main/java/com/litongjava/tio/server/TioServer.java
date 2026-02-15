@@ -29,6 +29,8 @@ import com.litongjava.tio.utils.hutool.StrUtil;
 public class TioServer {
   private static final Logger log = LoggerFactory.getLogger(TioServer.class);
 
+  public static final String HOTSWAP_WATCH_FILE_ENABLED_KEY = "hotswap.watch.file.enabled";
+
   private ServerTioConfig serverTioConfig;
   private AsynchronousServerSocketChannel serverSocketChannel;
   private Node serverNode;
@@ -178,12 +180,13 @@ public class TioServer {
         log.error("Failed to close serverSocketChannel", e);
       }
     }
-
-    serverTioConfig.setStopped(true);
-    boolean ret = Threads.close();
     log.info(this.serverNode + " stopped");
-
+    
+    boolean ret = false;
+    serverTioConfig.setStopped(true);
+    if (EnvUtils.getBoolean(HOTSWAP_WATCH_FILE_ENABLED_KEY, true)) {
+      ret = Threads.close();
+    }
     return ret;
-
   }
 }

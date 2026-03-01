@@ -95,7 +95,7 @@ public abstract class TioConfig extends MapWithLockPropSupport {
   public boolean runOnAndroid = false;
   public PacketConverter packetConverter = null;
 
-  private String charset = TioConst.CHARSET_NAME;
+  private String charset = TioConst.UTF_8;
 
   /**
    * 缓存工厂

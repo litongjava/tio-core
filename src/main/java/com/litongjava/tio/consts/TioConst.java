@@ -5,7 +5,7 @@ public interface TioConst {
   /**
    * 默认规定连接到本服务器的客户端统一用utf-8
    */
-  String CHARSET_NAME = "utf-8";
+  String UTF_8 = "utf-8";
 
   // 建议统一 key，避免魔法字符串散落
   String ATTR_TLS_PEER_HOST = "tio.tls.peerHost";

@@ -6,6 +6,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -93,7 +94,9 @@ public class UdpServer {
     this.udpServerConf = udpServerConf;
     datagramSocket = new DatagramSocket(this.udpServerConf.getServerNode().getPort());
     readBuf = new byte[this.udpServerConf.getReadBufferSize()];
-    udpHandlerRunnable = new UdpHandlerRunnable(udpServerConf.getUdpHandler(), handlerQueue, datagramSocket);
+    UdpHandler udpHandler = udpServerConf.getUdpHandler();
+    ExecutorService handlerExecutorService = udpServerConf.getHandlerExecutorService();
+    udpHandlerRunnable = new UdpHandlerRunnable(udpHandler, handlerQueue, datagramSocket, handlerExecutorService);
 
     udpSendRunnable = new UdpSendRunnable(sendQueue, udpServerConf, datagramSocket);
   }
@@ -182,5 +185,9 @@ public class UdpServer {
     isStopped = true;
     datagramSocket.close();
     udpHandlerRunnable.stop();
+    ExecutorService handlerExecutorService = udpServerConf.getHandlerExecutorService();
+    if (handlerExecutorService != null) {
+      handlerExecutorService.shutdown();
+    }
   }
 }

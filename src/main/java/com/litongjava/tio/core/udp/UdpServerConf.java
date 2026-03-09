@@ -21,6 +21,13 @@ public class UdpServerConf extends UdpConf {
     this.setServerNode(new Node(null, port));
   }
 
+  public UdpServerConf(int port, UdpHandler udpHandler, int timeout, ExecutorService handlerExecutorService) {
+    super(timeout);
+    this.udpHandler = udpHandler;
+    this.handlerExecutorService = handlerExecutorService;
+    this.setServerNode(new Node(null, port));
+  }
+  
   public UdpServerConf(int port, UdpHandler udpHandler, int timeout, ExecutorService handlerExecutorService,
       int readBufferSize) {
     super(timeout);

@@ -17,11 +17,8 @@ public class UdpSendRunnable implements Runnable {
   private static Logger log = LoggerFactory.getLogger(UdpSendRunnable.class);
 
   private LinkedBlockingQueue<DatagramPacket> queue;
-
   private UdpConf udpConf;
-
-  private boolean isStopped = false;
-
+  private volatile boolean isStopped = false;
   private DatagramSocket datagramSocket;
 
   /**
@@ -40,13 +37,27 @@ public class UdpSendRunnable implements Runnable {
     while (!isStopped) {
       try {
         DatagramPacket datagramPacket = queue.take();
+        if (isStopped) {
+          break;
+        }
+
         if (datagramSocket == null) {
           datagramSocket = new DatagramSocket();
           datagramSocket.setSoTimeout(udpConf.getTimeout());
         }
         datagramSocket.send(datagramPacket);
 
+      } catch (InterruptedException e) {
+        if (isStopped) {
+          break;
+        }
+        Thread.currentThread().interrupt();
+        log.error(e.toString(), e);
+        break;
       } catch (Throwable e) {
+        if (isStopped) {
+          break;
+        }
         log.error(e.toString(), e);
       } finally {
         if (queue.size() == 0) {

@@ -47,9 +47,6 @@ public class UdpServer {
         String str = "【" + msg + "】 from " + remote;
         log.error(str);
 
-        // log.info("收到来自{}的消息:【{}】", remote, msg);
-
-        // 演示 start ---- 下面的代码仅作演示，如果两边要交互，那么两边都要开udpclient和udpserver
         int otherPartyPort = 8000;
         DatagramPacket datagramPacket = new DatagramPacket(data, data.length,
             new InetSocketAddress(remote.getHost(), otherPartyPort));
@@ -58,32 +55,29 @@ public class UdpServer {
         } catch (Throwable e) {
           log.error(e.toString(), e);
         }
-        // 演示 end
-
       }
     };
     UdpServerConf udpServerConf = new UdpServerConf(3000, udpHandler, 5000);
 
     udpServer = new UdpServer(udpServerConf);
-
     udpServer.start();
   }
 
   private LinkedBlockingQueue<UdpPacket> handlerQueue = new LinkedBlockingQueue<>();
-
   private LinkedBlockingQueue<DatagramPacket> sendQueue = new LinkedBlockingQueue<>();
 
   private DatagramSocket datagramSocket = null;
-
   private byte[] readBuf = null;
 
   private volatile boolean isStopped = false;
 
   private UdpHandlerRunnable udpHandlerRunnable;
-
   private UdpSendRunnable udpSendRunnable = null;
-
   private UdpServerConf udpServerConf;
+
+  private Thread listenThread;
+  private Thread handlerThread;
+  private Thread sendThread;
 
   /**
    *
@@ -133,9 +127,9 @@ public class UdpServer {
   }
 
   private void startHandler() {
-    Thread thread = new Thread(udpHandlerRunnable, "tio-udp-server-handler");
-    thread.setDaemon(false);
-    thread.start();
+    handlerThread = new Thread(udpHandlerRunnable, "tio-udp-server-handler");
+    handlerThread.setDaemon(false);
+    handlerThread.start();
   }
 
   private void startListen() {
@@ -164,30 +158,57 @@ public class UdpServer {
 
             handlerQueue.put(udpPacket);
           } catch (Throwable e) {
+            if (isStopped) {
+              break;
+            }
             log.error(e.toString(), e);
           }
+        }
+
+        if (log.isInfoEnabled()) {
+          log.info("stopped tio udp server: {}", udpServerConf.getServerNode());
         }
       }
     };
 
-    Thread thread = new Thread(runnable, "tio-udp-server-listen");
-    thread.setDaemon(false);
-    thread.start();
+    listenThread = new Thread(runnable, "tio-udp-server-listen");
+    listenThread.setDaemon(false);
+    listenThread.start();
   }
 
   private void startSend() {
-    Thread thread = new Thread(udpSendRunnable, "tio-udp-client-send");
-    thread.setDaemon(false);
-    thread.start();
+    sendThread = new Thread(udpSendRunnable, "tio-udp-client-send");
+    sendThread.setDaemon(false);
+    sendThread.start();
   }
 
   public void stop() {
+    if (isStopped) {
+      return;
+    }
+
     isStopped = true;
-    datagramSocket.close();
-    udpHandlerRunnable.stop();
-    ExecutorService handlerExecutorService = udpServerConf.getHandlerExecutorService();
-    if (handlerExecutorService != null) {
-      handlerExecutorService.shutdown();
+
+    if (udpSendRunnable != null) {
+      udpSendRunnable.stop();
+    }
+
+    if (udpHandlerRunnable != null) {
+      udpHandlerRunnable.stop();
+    }
+
+    if (datagramSocket != null && !datagramSocket.isClosed()) {
+      datagramSocket.close();
+    }
+
+    if (listenThread != null) {
+      listenThread.interrupt();
+    }
+    if (sendThread != null) {
+      sendThread.interrupt();
+    }
+    if (handlerThread != null) {
+      handlerThread.interrupt();
     }
   }
 }
